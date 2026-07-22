@@ -1,0 +1,73 @@
+{
+  "system": "Multi-tenant SaaS API (fixture)",
+  "controlActions": [
+    {
+      "id": "CA-1",
+      "action": "grant access to a tenant-scoped record",
+      "controller": "AuthZ middleware",
+      "process": "tenant-data service",
+      "hazards": ["H-1", "H-2"]
+    },
+    {
+      "id": "CA-2",
+      "action": "issue a session token",
+      "controller": "Auth service",
+      "process": "session store",
+      "hazards": ["H-3"]
+    },
+    {
+      "id": "CA-3",
+      "action": "revoke a session / role assignment",
+      "controller": "Admin console",
+      "process": "identity store",
+      "hazards": ["H-1", "H-4"]
+    },
+    {
+      "id": "CA-4",
+      "action": "deploy a build to production",
+      "controller": "CI/CD pipeline",
+      "process": "production runtime",
+      "hazards": ["H-5"]
+    },
+    {
+      "id": "CA-5",
+      "action": "write a record to the primary datastore",
+      "controller": "Data-access layer",
+      "process": "primary datastore",
+      "hazards": ["H-2", "H-6"]
+    }
+  ],
+  "feedback": [
+    { "id": "F-1", "from": "primary datastore", "to": "Data-access layer", "signal": "query result" },
+    { "id": "F-2", "from": "identity store", "to": "Admin console", "signal": "audit event on revocation" },
+    { "id": "F-3", "from": "production runtime", "to": "CI/CD pipeline", "signal": "NONE — no post-deploy assertion that the intended build is live" }
+  ],
+  "processModels": [
+    {
+      "controller": "AuthZ middleware",
+      "variables": [
+        { "id": "PM-1", "belief": "caller identity", "sourcedFrom": "session cookie", "staleness": "session TTL" },
+        { "id": "PM-2", "belief": "caller tenant", "sourcedFrom": "request header", "staleness": "wrong at source, permanently" },
+        { "id": "PM-3", "belief": "caller role", "sourcedFrom": "cached ACL", "staleness": "up to cache TTL" }
+      ]
+    },
+    {
+      "controller": "Auth service",
+      "variables": [
+        { "id": "PM-4", "belief": "credential presented is fresh and unreplayed", "sourcedFrom": "token signature only", "staleness": "token TTL" }
+      ]
+    },
+    {
+      "controller": "Admin console",
+      "variables": [
+        { "id": "PM-5", "belief": "revocation has taken effect everywhere", "sourcedFrom": "write acknowledgement from identity store", "staleness": "does not account for in-flight sessions" }
+      ]
+    },
+    {
+      "controller": "CI/CD pipeline",
+      "variables": [
+        { "id": "PM-6", "belief": "this commit passed review", "sourcedFrom": "branch protection state at merge time", "staleness": "not re-checked at deploy time" }
+      ]
+    }
+  ]
+}

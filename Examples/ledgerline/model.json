@@ -1,0 +1,215 @@
+{
+  "system": "Ledgerline \u2014 multi-tenant invoicing API (fictional; design document only, no code)",
+  "scope": {
+    "requested": "full",
+    "candidateControlActions": 8,
+    "selectionCriteria": "Every authority-bearing action named in DESIGN.md. Design-doc modality: the control structure is read off the component list and the review notes, so 'full' means every action the document describes \u2014 the document itself is the boundary.",
+    "sources": [
+      {
+        "type": "design-doc",
+        "locator": "Examples/ledgerline/DESIGN.md",
+        "ref": "as committed",
+        "note": "no codebase exists; all process models are inferred from prose and recorded as assumptions"
+      }
+    ],
+    "deferred": []
+  },
+  "controllers": [
+    {
+      "id": "C-1",
+      "name": "API gateway",
+      "type": "automated"
+    },
+    {
+      "id": "C-2",
+      "name": "Invoice service",
+      "type": "automated"
+    },
+    {
+      "id": "C-3",
+      "name": "Pay-link service",
+      "type": "automated"
+    },
+    {
+      "id": "C-4",
+      "name": "Reminder job",
+      "type": "automated"
+    },
+    {
+      "id": "C-5",
+      "name": "Support console",
+      "type": "human-in-the-loop"
+    },
+    {
+      "id": "C-6",
+      "name": "Webhook dispatcher",
+      "type": "automated"
+    }
+  ],
+  "processes": [
+    {
+      "id": "P-1",
+      "name": "invoices"
+    },
+    {
+      "id": "P-2",
+      "name": "org membership"
+    },
+    {
+      "id": "P-3",
+      "name": "sessions"
+    }
+  ],
+  "controlActions": [
+    {
+      "id": "CA-1",
+      "action": "issue a session for a member",
+      "controller": "API gateway",
+      "process": "see hazards",
+      "hazards": []
+    },
+    {
+      "id": "CA-2",
+      "action": "serve an invoice to a session",
+      "controller": "Invoice service",
+      "process": "see hazards",
+      "hazards": []
+    },
+    {
+      "id": "CA-3",
+      "action": "serve an invoice by pay-link token",
+      "controller": "Pay-link service",
+      "process": "see hazards",
+      "hazards": []
+    },
+    {
+      "id": "CA-4",
+      "action": "modify or void an invoice",
+      "controller": "Invoice service",
+      "process": "see hazards",
+      "hazards": []
+    },
+    {
+      "id": "CA-5",
+      "action": "grant a staff member an impersonation session",
+      "controller": "Support console",
+      "process": "see hazards",
+      "hazards": []
+    },
+    {
+      "id": "CA-6",
+      "action": "remove a member from an org",
+      "controller": "API gateway",
+      "process": "see hazards",
+      "hazards": []
+    },
+    {
+      "id": "CA-7",
+      "action": "send an overdue reminder email",
+      "controller": "Reminder job",
+      "process": "see hazards",
+      "hazards": []
+    },
+    {
+      "id": "CA-8",
+      "action": "dispatch a payment webhook",
+      "controller": "Webhook dispatcher",
+      "process": "see hazards",
+      "hazards": []
+    }
+  ],
+  "feedback": [
+    {
+      "id": "F-1",
+      "from": "pay-link service",
+      "to": "org",
+      "signal": "NONE \u2014 no record of who fetched an invoice by token, so scraping is indistinguishable from a customer opening their bill"
+    },
+    {
+      "id": "F-2",
+      "from": "support console",
+      "to": "impersonated member",
+      "signal": "NONE \u2014 the member is never told they were impersonated; the document describes no notification and no audit surface they can read"
+    },
+    {
+      "id": "F-3",
+      "from": "webhook dispatcher",
+      "to": "security review",
+      "signal": "NONE \u2014 no allow-list check or egress log on the org-supplied URL"
+    },
+    {
+      "id": "F-4",
+      "from": "invoice service",
+      "to": "org",
+      "signal": "invoice audit trail \u2014 described in the document and assumed present"
+    }
+  ],
+  "processModels": [
+    {
+      "controller": "API gateway",
+      "variables": [
+        {
+          "id": "PM-1",
+          "belief": "the orgId in the token is the caller's current org",
+          "sourcedFrom": "the JWT claim, minted at login and never re-read",
+          "staleness": "token lifetime \u2014 the review notes say removal does not revoke existing sessions, so this is wrong for exactly as long as a token lives"
+        }
+      ]
+    },
+    {
+      "controller": "Pay-link service",
+      "variables": [
+        {
+          "id": "PM-2",
+          "belief": "the presenter of a pay-link token is the invoice's customer",
+          "sourcedFrom": "possession of a UUIDv4 that never rotates",
+          "staleness": "permanent \u2014 the token outlives the payment, the customer relationship, and any dispute"
+        }
+      ]
+    },
+    {
+      "controller": "Support console",
+      "variables": [
+        {
+          "id": "PM-3",
+          "belief": "an impersonation session is distinguishable from the member's own session",
+          "sourcedFrom": "a staff:true claim that downstream services are not documented to read",
+          "staleness": "the belief is asserted, never checked"
+        }
+      ]
+    },
+    {
+      "controller": "Invoice service",
+      "variables": [
+        {
+          "id": "PM-4",
+          "belief": "the orgId attached by the gateway is authoritative",
+          "sourcedFrom": "a header set by an upstream component, trusted without re-derivation",
+          "staleness": "per request, and only as good as PM-1"
+        }
+      ]
+    },
+    {
+      "controller": "Reminder job",
+      "variables": [
+        {
+          "id": "PM-5",
+          "belief": "the email address on an overdue invoice is still the right recipient",
+          "sourcedFrom": "the invoice row as written at issue time",
+          "staleness": "unbounded \u2014 an invoice can be overdue for months after the contact changed"
+        }
+      ]
+    },
+    {
+      "controller": "Webhook dispatcher",
+      "variables": [
+        {
+          "id": "PM-6",
+          "belief": "the configured webhook URL is an external endpoint the org controls",
+          "sourcedFrom": "a free-text settings field with no validation described",
+          "staleness": "whatever was last typed"
+        }
+      ]
+    }
+  ]
+}

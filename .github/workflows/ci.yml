@@ -1,0 +1,34 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+
+      - name: CLI loads
+        run: chmod +x stpa && ./stpa --help
+
+      - name: Grid arithmetic on the fixture
+        run: |
+          bun Tools/UcaGrid.ts init Fixtures/example-model.json -o /tmp/grid.json
+          bun Tools/UcaGrid.ts status /tmp/grid.json
+
+      - name: The worked example still resolves to 100%
+        run: |
+          bun Tools/UcaGrid.ts status Examples/ledgerline/grid.json | tee /tmp/out
+          grep -q "COVERAGE:      100.0%" /tmp/out
+          grep -q "open:          0" /tmp/out
+
+      - name: Scope contract and plan gates hold
+        run: |
+          bun Tools/ScopeGate.ts Examples/ledgerline
+          bun Tools/Prioritize.ts Examples/ledgerline --check
+
+      - name: Report renders self-contained
+        run: |
+          bun Tools/RenderReport.ts Examples/ledgerline
+          test -s Examples/ledgerline/REPORT.html
+          ! grep -qE 'src="https?://|href="https?://[^"]*\.css' Examples/ledgerline/REPORT.html

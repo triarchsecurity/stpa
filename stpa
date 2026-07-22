@@ -1,0 +1,190 @@
+#!/usr/bin/env bun
+/**
+ * stpa — one entry point for the whole toolkit.
+ *
+ *   stpa scan <repo>              candidate control-structure elements from code
+ *   stpa init <model.json>        build the 4 x N UCA grid
+ *   stpa status <grid.json>       coverage, binding spread, open cells
+ *   stpa grid <grid.json>         render the grid as markdown
+ *   stpa plan [dir]               findings -> ranked, sequenced backlog
+ *   stpa report [dir]             the HTML deliverable (default final step)
+ *   stpa merge [dir] --expect <m> reconcile parallel plane results (gate)
+ *   stpa scope [dir]              hold the analysis to the scope requested (gate)
+ *   stpa run [dir]                plan + report in one go
+ *   stpa new [dir]                scaffold a blank analysis directory
+ *
+ * Everything is offline. No API keys, no network, no telemetry.
+ */
+
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const TOOLS = join(HERE, "tools");
+const LEGACY_TOOLS = join(HERE, "Tools"); // tolerate either casing
+const toolDir = existsSync(TOOLS) ? TOOLS : LEGACY_TOOLS;
+
+const USAGE = `stpa — control-theoretic threat modeling (STPA) for codebases and design documents
+
+  stpa new     [dir]                 scaffold a blank analysis directory (default .stpa)
+  stpa scan    <repo> [--json]       candidate control-structure elements from code
+  stpa init    <model.json> [-o g]   build the 4 x N UCA grid
+  stpa status  <grid.json>           coverage, binding spread, open cells
+  stpa grid    <grid.json> [-o md]   render the grid as markdown
+  stpa plan    [dir] [--check]       findings -> ranked, sequenced backlog
+  stpa report  [dir] [-o html]       the HTML deliverable
+  stpa merge   [dir] --expect <m>    reconcile parallel plane results (gate)
+  stpa scope   [dir] [--inventory N] hold the analysis to the scope requested (gate)
+  stpa run     [dir]                 plan + report in one go
+
+Typical first run:
+
+  stpa scan ./my-repo --json > candidates.json   # orientation, not findings
+  stpa new .stpa                                 # scaffold
+  # ...write .stpa/model.json by hand from the candidates (this is the analysis)
+  stpa init .stpa/model.json -o .stpa/grid.json
+  # ...resolve every cell in grid.json
+  stpa run .stpa                                 # -> .stpa/REPORT.html
+
+First time here? What this does, in three lines:
+
+  It finds security problems that exist when every component works as designed —
+  broken authorization, tenant leaks, TOCTOU, stale permissions, bypass paths.
+  It is NOT a scanner: no CVEs, no injection, no dependency audit. Use SAST for those.
+
+You supply three things the tools cannot guess (each is a section in .stpa/):
+
+  1. Losses          what outcomes are unacceptable, in business terms
+  2. Hazards         system states that lead to them — NOT attacker actions
+  3. Process models  what each component BELIEVES, where the belief comes from,
+                     and how stale it can be   <- most findings come from here
+
+Two numbers you will get, and they are different:
+
+  Analysis completeness   did you finish the analysis you scoped?
+  System coverage         how much of the system did you scope?
+
+Docs: README.md (strategic + tactical), METHOD.md (the method itself).
+Everything runs offline. No API keys, no network calls, no telemetry.`;
+
+const [cmd, ...rest] = process.argv.slice(2);
+if (!cmd || cmd === "--help" || cmd === "-h" || cmd === "help") {
+  console.log(USAGE);
+  process.exit(cmd ? 0 : 2);
+}
+if (cmd === "--version" || cmd === "version") {
+  console.log("stpa 1.0.0");
+  process.exit(0);
+}
+
+function run(tool: string, args: string[]): number {
+  const p = join(toolDir, tool);
+  if (!existsSync(p)) {
+    console.error(`missing tool: ${p}`);
+    return 1;
+  }
+  const r = spawnSync("bun", [p, ...args], { stdio: "inherit" });
+  return r.status ?? 1;
+}
+
+const SCAFFOLD_MODEL = {
+  system: "NAME YOUR SYSTEM HERE",
+  scope: {
+    candidateControlActions: 0,
+    selectionCriteria: "state plainly why THESE control actions and not others — e.g. 'authority-bearing: grants access, changes authority, or produces an irreversible external effect'",
+    deferred: [{ name: "e.g. the reporting API", reason: "read-only over already-authorized data; scheduled for a later pass" }],
+  },
+  controllers: [{ id: "C-1", name: "e.g. authorization middleware", type: "automated|human|organizational" }],
+  processes: [{ id: "P-1", name: "e.g. the primary datastore" }],
+  controlActions: [
+    { id: "CA-1", action: "e.g. grant access to a tenant-scoped record", controller: "e.g. authorization middleware", process: "e.g. the primary datastore", hazards: ["H-1"] },
+  ],
+  feedback: [{ id: "F-1", from: "P-1", to: "C-1", signal: "e.g. audit event — write NONE if the loop does not close" }],
+  processModels: [
+    {
+      controller: "e.g. authorization middleware",
+      variables: [
+        { id: "PM-1", belief: "what this controller thinks is true", sourcedFrom: "where that belief comes from", staleness: "how wrong it can be, and for how long" },
+      ],
+    },
+  ],
+};
+
+switch (cmd) {
+  case "new": {
+    const dir = resolve(rest[0] ?? ".stpa");
+    mkdirSync(dir, { recursive: true });
+    const model = join(dir, "model.json");
+    if (existsSync(model)) {
+      console.error(`${model} already exists — refusing to overwrite an analysis in progress.`);
+      process.exit(1);
+    }
+    writeFileSync(model, JSON.stringify(SCAFFOLD_MODEL, null, 2));
+    writeFileSync(
+      join(dir, "01-scope.md"),
+      [
+        "# 01 — Scope, losses and hazards",
+        "",
+        "**Purpose.** A system to do {what} by means of {how} in order to contribute to {why}.",
+        "",
+        "## Boundary",
+        "- **Inside:** things whose design you can change.",
+        "- **Environment:** things you must accept, including the adversary.",
+        "- **Excluded:** things deliberately not analyzed — each with a reason.",
+        "",
+        "## Losses (stakeholder-level; not technical events)",
+        "- L-1: ",
+        "",
+        "## Hazards (SYSTEM STATES — never attacker actions, never causes)",
+        "- H-1:  [L-1]",
+        "",
+        "## System-level constraints (invert each hazard)",
+        "- SC-1: The system must not ... [H-1]",
+      ].join("\n"),
+    );
+    console.error(`scaffolded ${dir}/  (model.json, 01-scope.md)`);
+    console.error(`next: fill in 01-scope.md, then model.json, then \`stpa init ${dir}/model.json -o ${dir}/grid.json\``);
+    process.exit(0);
+  }
+  case "scan":
+    process.exit(run("ControlStructureScan.ts", rest));
+  case "init":
+    process.exit(run("UcaGrid.ts", ["init", ...rest]));
+  case "status":
+    process.exit(run("UcaGrid.ts", ["status", ...rest]));
+  case "grid":
+    process.exit(run("UcaGrid.ts", ["markdown", ...rest]));
+  case "merge":
+    process.exit(run("MergePlanes.ts", rest));
+  case "scope":
+    process.exit(run("ScopeGate.ts", rest));
+  case "plan":
+    process.exit(run("Prioritize.ts", rest));
+  case "report":
+    process.exit(run("RenderReport.ts", rest));
+  case "run": {
+    const dir = rest[0] ?? ".stpa";
+    // Scope contract first. A report that is complete in every other respect but
+    // covers 60% of a system the requester asked to have fully covered is not a
+    // partial success — it is the wrong deliverable, and everything downstream
+    // would dress it up as finished.
+    const sc = run("ScopeGate.ts", [dir]);
+    if (sc !== 0) {
+      console.error(`\n!! SCOPE CONTRACT NOT HONOURED (exit ${sc}). Continuing so you can see the`);
+      console.error(`   findings, but this command will exit non-zero and the report will say so.\n`);
+    }
+    const a = run("Prioritize.ts", [dir]);
+    if (a !== 0) {
+      console.error(`\n!! PLAN STEP FAILED (exit ${a}). Rendering anyway so you can see the findings,`);
+      console.error(`   but the report will carry an INCOMPLETE banner and this command will exit`);
+      console.error(`   non-zero. A report with no plan tells nobody what to do first.\n`);
+    }
+    const r = run("RenderReport.ts", [dir]);
+    process.exit(r !== 0 ? r : sc !== 0 ? sc : a);
+  }
+  default:
+    console.error(`unknown command: ${cmd}\n\n${USAGE}`);
+    process.exit(2);
+}

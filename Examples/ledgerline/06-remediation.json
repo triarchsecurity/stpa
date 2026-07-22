@@ -1,0 +1,218 @@
+{
+  "system": "Ledgerline — multi-tenant invoicing API (fictional; design document only, no code)",
+  "metrics": {
+    "findings": 8,
+    "unremediated": 0,
+    "bands": {
+      "band1": 1,
+      "band2": 4,
+      "band3": 2,
+      "band4": 1
+    },
+    "effort": {
+      "S": 4,
+      "M": 4,
+      "L": 0
+    },
+    "quickWins": 2,
+    "rootCauses": 4,
+    "maxLeverage": 3,
+    "concentration": 0.38,
+    "wave1Size": 3,
+    "wave1CoversUrgentPct": 60,
+    "locatedPct": 100,
+    "probedPct": 100
+  },
+  "clusters": [
+    {
+      "id": "RC-1",
+      "name": "Entitlement is decided from a claim, never from current state",
+      "summary": "The gateway mints orgId at login and never re-reads it, and the invoice service trusts the header the gateway attaches. Neither component owns the belief, so neither refreshes it. The design note 'existing sessions are not revoked' is the same defect stated as a fact.",
+      "fix": "Derive org membership at the point of use, from the membership table, with a short cache. Make the gateway header advisory rather than authoritative.",
+      "effort": "M",
+      "leverage": 3,
+      "bestBand": 2,
+      "findings": [
+        "CA-2.provided",
+        "CA-6.duration",
+        "CA-1.timing-order"
+      ]
+    },
+    {
+      "id": "RC-2",
+      "name": "Possession of a long-lived token is treated as entitlement",
+      "summary": "Pay links are UUIDv4s that never rotate or expire, and they are distributed by email — so every copy that email produces is a permanent credential. No check can distinguish the customer from anyone the customer forwarded the mail to.",
+      "fix": "Bind pay-link validity to invoice state: expire at payment, rotate on dispute, and require a second factor the customer already holds.",
+      "effort": "S",
+      "leverage": 2,
+      "bestBand": 2,
+      "findings": [
+        "CA-3.provided",
+        "CA-3.duration"
+      ]
+    },
+    {
+      "id": "RC-4",
+      "name": "Three of four feedback channels do not exist",
+      "summary": "No pay-link access log, no impersonation notice the org can read, no webhook egress log. Every other finding here is silent, and every fix above can regress unobserved.",
+      "fix": "Log the pay-link fetch, expose an org-readable impersonation trail, and record webhook egress destinations.",
+      "effort": "L",
+      "leverage": 2,
+      "bestBand": 3,
+      "findings": [
+        "CA-5.provided",
+        "CA-7.provided"
+      ]
+    },
+    {
+      "id": "RC-3",
+      "name": "Org-supplied input reaches the network without an egress control",
+      "summary": "The webhook URL is a free-text field consumed from inside the production network. Validation at save cannot bind the address at dispatch.",
+      "fix": "Route all webhook egress through a proxy that resolves and refuses non-public addresses at connect time.",
+      "effort": "M",
+      "leverage": 1,
+      "bestBand": 1,
+      "findings": [
+        "CA-8.provided"
+      ]
+    }
+  ],
+  "waves": [
+    {
+      "wave": 1,
+      "label": "Start here",
+      "items": [
+        {
+          "id": "CA-8.provided",
+          "controlAction": "dispatch a payment webhook",
+          "controller": "Webhook dispatcher",
+          "band": 1,
+          "severity": "catastrophic",
+          "reachability": "R1",
+          "effort": "M",
+          "cluster": "RC-3",
+          "location": "DESIGN.md — 'the webhook URL is whatever the org typed'",
+          "fix": "Egress proxy that resolves at connect time and refuses non-public addresses.",
+          "probe": "Configure a host resolving to 169.254.169.254 → connection refused and logged.",
+          "statement": "The webhook dispatcher POSTs a payment event when the configured URL points at an internal address, leading to H-3 (internal endpoints reached from inside the trust boundary, and event contents delivered to an unintended host)."
+        },
+        {
+          "id": "CA-3.provided",
+          "controlAction": "serve an invoice by pay-link token",
+          "controller": "Pay-link service",
+          "band": 2,
+          "severity": "severe",
+          "reachability": "R1",
+          "effort": "S",
+          "cluster": "RC-2",
+          "location": "DESIGN.md — 'pay-link token is a UUIDv4 ... never rotates'",
+          "fix": "Expire the token on payment or void; rotate on dispute.",
+          "probe": "Pay an invoice, re-fetch by token → expect 410.",
+          "statement": "The pay-link service serves an invoice when the presenter is anyone who has ever seen the link, including after the customer relationship ends, leading to H-1 (invoice contents disclosed to a non-customer)."
+        },
+        {
+          "id": "CA-3.duration",
+          "controlAction": "serve an invoice by pay-link token",
+          "controller": "Pay-link service",
+          "band": 2,
+          "severity": "severe",
+          "reachability": "R1",
+          "effort": "S",
+          "cluster": "RC-2",
+          "location": "DESIGN.md — pay-link section",
+          "fix": "Give the token a TTL independent of invoice state as a backstop.",
+          "probe": "Fetch a token older than the TTL → expect 410.",
+          "statement": "The pay-link service keeps honouring a pay-link token indefinitely after the invoice is paid, leading to H-1."
+        }
+      ]
+    },
+    {
+      "wave": 2,
+      "label": "This cycle",
+      "items": [
+        {
+          "id": "CA-2.provided",
+          "controlAction": "serve an invoice to a session",
+          "controller": "Invoice service",
+          "band": 2,
+          "severity": "severe",
+          "reachability": "R1",
+          "effort": "M",
+          "cluster": "RC-1",
+          "location": "DESIGN.md — 'Invoice service — scoped by the orgId the gateway attached'",
+          "fix": "Look up current membership at the point of use instead of trusting the claim.",
+          "probe": "Remove a member, call an invoice route with the pre-removal token → expect 403.",
+          "statement": "The invoice service serves an invoice to a session when the session's orgId claim no longer matches the caller's current membership, leading to H-1 (a former member reads an org's invoices)."
+        },
+        {
+          "id": "CA-6.duration",
+          "controlAction": "remove a member from an org",
+          "controller": "API gateway",
+          "band": 2,
+          "severity": "severe",
+          "reachability": "R1",
+          "effort": "M",
+          "cluster": "RC-1",
+          "location": "DESIGN.md — 'existing sessions are not revoked'",
+          "fix": "Sweep and invalidate sessions on membership removal.",
+          "probe": "Remove a member with a live session; assert the session is rejected within 60s.",
+          "statement": "The API gateway continues to honour sessions minted before a member was removed, for the remainder of the token lifetime, leading to H-1."
+        }
+      ]
+    },
+    {
+      "wave": 3,
+      "label": "Scheduled",
+      "items": [
+        {
+          "id": "CA-1.timing-order",
+          "controlAction": "issue a session for a member",
+          "controller": "API gateway",
+          "band": 3,
+          "severity": "moderate",
+          "reachability": "R2",
+          "effort": "S",
+          "cluster": "RC-1",
+          "location": "DESIGN.md — 'attaches orgId from the token'",
+          "fix": "Stop treating the login-time claim as an entitlement; carry identity, derive authority.",
+          "probe": "Assert no route reads orgId from the token without a membership lookup.",
+          "statement": "The API gateway mints a session carrying an orgId before membership is confirmed current, leading to H-1 for the token's lifetime."
+        },
+        {
+          "id": "CA-5.provided",
+          "controlAction": "grant a staff member an impersonation session",
+          "controller": "Support console",
+          "band": 3,
+          "severity": "severe",
+          "reachability": "R3",
+          "effort": "M",
+          "cluster": "RC-4",
+          "location": "DESIGN.md — support console section",
+          "fix": "Require a recorded reason, and expose the impersonation trail to the organisation.",
+          "probe": "Assert an org-readable audit row exists for every staff:true session.",
+          "statement": "The support console grants an impersonation session when the staff member has no ticket or consent tying them to that org, leading to H-2 (staff read customer data without a business reason)."
+        }
+      ]
+    },
+    {
+      "wave": 4,
+      "label": "Accept in writing",
+      "items": [
+        {
+          "id": "CA-7.provided",
+          "controlAction": "send an overdue reminder email",
+          "controller": "Reminder job",
+          "band": 4,
+          "severity": "moderate",
+          "reachability": "R3",
+          "effort": "S",
+          "cluster": "RC-4",
+          "location": "DESIGN.md — reminder job section",
+          "fix": "Resolve the recipient at send time and log which contact was used.",
+          "probe": "Change the org contact, trigger a reminder, assert the new contact received it.",
+          "statement": "The reminder job emails an overdue invoice to the address captured at issue time when that address is no longer the customer's, leading to H-1."
+        }
+      ]
+    }
+  ]
+}

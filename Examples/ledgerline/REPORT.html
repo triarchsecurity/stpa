@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ledgerline — multi-tenant invoicing API (fictional; design document only, no code) — STPA Threat Model</title>
+<style>
+:root{
+  --bg:#fbfbfa; --panel:#fff; --ink:#16181d; --muted:#5c6270; --line:#e3e5ea;
+  --accent:#1f4ed8; --uca:#b42318; --uca-bg:#fef3f2; --tomb:#475467; --tomb-bg:#f4f5f7;
+  --open:#b54708; --open-bg:#fffaeb; --unbound:#7a5af8; --unbound-bg:#f4f3ff; --ok:#067647;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e1014; --panel:#15181e; --ink:#e6e8ec; --muted:#9aa2b1; --line:#262b34;
+  --accent:#7da2ff; --uca:#ff8a80; --uca-bg:#2a1614; --tomb:#9aa2b1; --tomb-bg:#1a1e25;
+  --open:#f0b429; --open-bg:#2a2211; --unbound:#c4b5fd; --unbound-bg:#1e1b2e; --ok:#5ed6a4;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.65 ui-sans-serif,-apple-system,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1140px;margin:0 auto;padding:40px 24px 96px}
+header.top{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:32px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:650}
+h1{font-size:29px;line-height:1.25;margin:8px 0 6px;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13.5px}
+.sources{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;
+  font-size:12px;color:var(--muted)}
+.sources .k{font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:650}
+.sources .src{background:var(--tomb-bg);border:1px solid var(--line);border-radius:6px;padding:3px 9px}
+.sources .src b{color:var(--ink);font-weight:600}
+.covrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0 12px}
+.covrow .stat{padding:18px 20px;text-align:center}
+.covrow .h{max-width:44ch;margin-left:auto;margin-right:auto}
+.covrow .v{font-size:34px}
+.covrow .h{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+.stats2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 12px}
+.stats2 .stat{padding:14px 16px;text-align:center}
+.stats2 .k{font-size:10px}
+.stats2 .v{font-size:28px;margin-top:3px}
+.stats2 .h{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.4}
+.composition{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:15px 18px;margin:0 0 8px}
+.comphead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:650;margin-bottom:10px}
+.comphead .muted{letter-spacing:0;text-transform:none;font-weight:400;font-size:11.5px}
+.compbar{height:14px;border-radius:99px;overflow:hidden;display:flex;background:var(--tomb-bg)}
+.cseg{height:100%}
+.c-find{background:var(--uca)} .c-ruled{background:var(--tomb)} .c-open{background:var(--open)}
+.complegend{display:flex;flex-wrap:wrap;gap:18px;margin-top:11px;font-size:12px;color:var(--muted)}
+.complegend .lg{display:flex;align-items:center;gap:7px}
+.complegend b{color:var(--ink);font-variant-numeric:tabular-nums}
+.complegend .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:0 0 8px}
+.stats .stat{padding:12px 14px;text-align:center}
+.stats .k{font-size:10px}
+.stats .v{font-size:24px;margin-top:4px}
+@media (max-width:760px){.covrow{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+.stat .k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:650}
+.stat .v{font-size:25px;font-weight:660;letter-spacing:-.02em;margin-top:3px}
+.stat.cov .v{color:var(--ok)}
+.stat.cov.warn .v{color:var(--open)}
+.qualifier{margin-top:14px;background:var(--open-bg);border:1px solid var(--open);border-radius:11px;
+  padding:13px 16px;color:var(--ink);font-size:13.5px}
+.qualifier b{color:var(--open)}
+.qualifier.incomplete{background:var(--uca-bg);border-color:var(--uca)}
+.qualifier.incomplete b{color:var(--uca)}
+.qualifier ul{margin:10px 0 6px;padding-left:20px}
+.qualifier li{margin:5px 0;font-size:13px}
+.req{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:750;color:var(--uca);
+  border:1px solid var(--uca);border-radius:4px;padding:1px 5px;vertical-align:1px}
+.bars{margin:22px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px}
+.bars h4{margin:0 0 12px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.bars h4{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.barsub{font-size:10.5px;letter-spacing:0;text-transform:none;font-weight:400;color:var(--muted)}
+.bar{display:grid;grid-template-columns:270px 1fr 34px;align-items:center;gap:14px;margin:11px 0;font-size:13px}
+.bar .blabel{line-height:1.3}
+.bar .bname{font-weight:600;font-size:13px}
+.bar .bhint{font-size:11px;color:var(--muted);margin-top:2px}
+.bar .track{height:10px;background:var(--tomb-bg);border-radius:99px;overflow:hidden;display:flex}
+.bar .seg{height:100%}
+.bar .n{text-align:center;color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+.sb-1{background:var(--uca)} .sb-2{background:var(--open)}
+.sb-3{background:var(--muted)} .sb-4{background:var(--line)}
+.sb-x{background:var(--accent);opacity:.55}
+.barlegend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.barlegend .lg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.barlegend .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+.barfoot{font-size:11.5px;color:var(--muted);margin:12px 0 0}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:30px 0 6px}
+nav.toc a{font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--line);
+  border-radius:99px;padding:5px 12px;background:var(--panel)}
+nav.toc a:hover{color:var(--accent);border-color:var(--accent)}
+section.doc,section.block{background:var(--panel);border:1px solid var(--line);border-radius:13px;
+  padding:22px 26px;margin:20px 0}
+h2{font-size:19px;margin:0 0 14px;letter-spacing:-.01em;padding-bottom:9px;border-bottom:1px solid var(--line)}
+h3{font-size:15.5px;margin:22px 0 9px}
+h4{font-size:13.5px;margin:16px 0 6px}
+p{margin:9px 0}
+ul{margin:9px 0;padding-left:20px} li{margin:4px 0}
+code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--tomb-bg);border-radius:4px;padding:1px 4px;
+  overflow-wrap:break-word;word-break:normal}
+td code{background:transparent;padding:0}
+td.loc code,td.probe code{background:var(--tomb-bg);padding:2px 5px;display:inline;max-width:none}
+blockquote{margin:12px 0;padding:11px 15px;border-left:3px solid var(--open);
+  background:var(--open-bg);border-radius:0 8px 8px 0;font-size:13.5px}
+.codeblock{margin:14px 0;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--tomb-bg)}
+.diagram-label{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  padding:8px 13px;border-bottom:1px solid var(--line);font-weight:650}
+.codeblock pre{margin:0;padding:14px;overflow-x:auto;
+  font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.tablewrap{overflow-x:auto;margin:13px 0;border:1px solid var(--line);border-radius:9px}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}
+th{background:var(--tomb-bg);text-align:left;padding:9px 12px;font-weight:650;font-size:11.5px;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+section.ca{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:20px 24px;margin:16px 0}
+section.ca h3{margin:0 0 4px;display:flex;flex-wrap:wrap;align-items:baseline;gap:10px}
+.caid{font:12px ui-monospace,Menlo,monospace;background:var(--accent);color:#fff;
+  border-radius:5px;padding:2px 7px;letter-spacing:.03em}
+.ctrl{font-size:12.5px;color:var(--muted);font-weight:400}
+.cacount{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:500}
+table.grid td.ttype{white-space:nowrap;color:var(--muted);font-size:12.5px}
+table.grid td.tbody{min-width:300px}
+table.grid td.tmeta{white-space:nowrap;font-size:12px}
+tr.tombstone td.tbody{color:var(--muted)}
+.pill{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  border-radius:99px;padding:3px 9px;white-space:nowrap}
+.pill-uca{background:var(--uca-bg);color:var(--uca);border:1px solid var(--uca)}
+.pill-tomb{background:var(--tomb-bg);color:var(--tomb);border:1px solid var(--line)}
+.pill-open{background:var(--open-bg);color:var(--open);border:1px solid var(--open)}
+.pill-unbound{background:var(--unbound-bg);color:var(--unbound);border:1px solid var(--unbound)}
+
+.plan-block{border-color:var(--accent);border-width:2px}
+.lede{font-size:15.5px;margin:0 0 16px}
+.planstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0}
+.pstat{background:var(--tomb-bg);border:1px solid var(--line);border-radius:10px;padding:13px 14px;text-align:center}
+.pstat .k{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:650}
+.pstat .v{font-size:23px;font-weight:660;letter-spacing:-.02em;margin:2px 0 1px}
+.pstat .h{font-size:11.5px;color:var(--muted)}
+.caveat{font-size:12.5px;color:var(--muted);margin:12px 0 0}
+.leadfix{margin:22px 0;padding:18px 20px;border:1px solid var(--accent);border-radius:11px;background:var(--tomb-bg)}
+.leadfix .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.leadfix h3{margin:6px 0 8px;font-size:17px}
+.leadfix .do{margin-top:10px}
+h3.wave{margin:26px 0 10px;display:flex;align-items:baseline;gap:10px;
+  padding-bottom:7px;border-bottom:1px solid var(--line)}
+h3.wave.w1{color:var(--uca)}
+.band{display:inline-block;min-width:20px;text-align:center;font-size:11.5px;font-weight:750;
+  border-radius:5px;padding:2px 6px}
+.band-1{background:var(--uca-bg);color:var(--uca);border:1px solid var(--uca)}
+.band-2{background:var(--open-bg);color:var(--open);border:1px solid var(--open)}
+.band-3{background:var(--tomb-bg);color:var(--tomb);border:1px solid var(--line)}
+.band-4{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+.eff{display:inline-block;font-size:11px;font-weight:750;border-radius:4px;padding:1px 5px;
+  background:var(--tomb-bg);border:1px solid var(--line)}
+.eff-S{color:var(--ok);border-color:var(--ok)}
+.effw{font-size:11px;color:var(--muted)}
+table.plan{table-layout:fixed;min-width:940px}
+table.plan.rc{min-width:1000px}
+table.plan col.c-rcid{width:62px} table.plan col.c-rcname{width:260px}
+table.plan col.c-lev{width:78px} table.plan col.c-fix{width:auto}
+table.plan col.c-bandd{width:118px}
+.rcid{display:inline-block;font:11.5px ui-monospace,Menlo,monospace;font-weight:700;
+  background:var(--accent);color:#fff;border-radius:5px;padding:2px 7px}
+.rcref{font:10.5px ui-monospace,Menlo,monospace;color:var(--accent);margin-top:3px;font-weight:650}
+.bandcell{white-space:nowrap}
+.bandwhy{margin-top:4px;font-size:10.5px;white-space:nowrap}
+.sev{font-weight:650;text-transform:capitalize}
+.sev-catastrophic{color:var(--uca)} .sev-severe{color:var(--open)}
+.sev-moderate{color:var(--muted)} .sev-minor{color:var(--muted)}
+.mult{color:var(--muted)}
+.reach{font:10.5px ui-monospace,Menlo,monospace;font-weight:700;color:var(--accent);
+  border-bottom:1px dotted var(--accent);cursor:help}
+.thsub{display:block;font-size:9.5px;letter-spacing:.03em;text-transform:none;font-weight:400;opacity:.75}
+table.plan col.c-id{width:132px} table.plan col.c-band{width:56px}
+table.plan col.c-eff{width:78px} table.plan col.c-loc{width:210px}
+table.plan col.c-fix{width:auto} table.plan col.c-probe{width:250px}
+table.plan td:first-child code{font-size:11px}
+/* nowrap applies to the WAVE tables only — on the root-cause table column 2 is
+   prose, and nowrap there overflows the cell across every column to its right. */
+table.plan:not(.rc) td:nth-child(1),table.plan:not(.rc) td:nth-child(2),table.plan:not(.rc) td:nth-child(3){white-space:nowrap}
+table.plan.rc{table-layout:fixed}
+table.plan.rc td:first-child{white-space:nowrap}
+table.plan.rc td.lev{white-space:nowrap;text-align:center}
+table.plan td:nth-child(2).bandcell,table.plan .bandcell{text-align:center}
+table.plan.rc th:nth-child(3),table.plan.rc th:nth-child(4),table.plan.rc th:nth-child(5){text-align:center}
+table.plan.rc td:nth-child(4),table.plan.rc td:nth-child(5){text-align:center}
+table.plan:not(.rc) th:nth-child(2),table.plan:not(.rc) th:nth-child(3){text-align:center}
+table.plan:not(.rc) td:nth-child(3){text-align:center}
+.csum{font-size:12px;margin-top:4px;font-weight:400;line-height:1.5;overflow-wrap:break-word}
+table.plan td.fix{font-size:12.5px;line-height:1.55}
+table.plan td.loc code,table.plan td.probe code{white-space:normal;overflow-wrap:break-word;
+  word-break:normal;hyphens:none}
+table.plan td.loc{font-size:11.5px}
+table.plan td.probe code{font-size:11.5px;white-space:pre-wrap;word-break:break-word;
+  display:block;padding:7px 9px;border-radius:6px;line-height:1.5}
+table.plan td.loc code{display:block;padding:7px 9px;border-radius:6px;font-size:11.5px;line-height:1.5}
+table.plan td.loc code{font-size:11.5px}
+td.lev .levn{font-size:17px;font-weight:700;color:var(--accent)}
+.csum{font-size:12px;margin-top:4px;font-weight:400}
+.muted{color:var(--muted)}
+nav.toc a.primary{color:var(--accent);border-color:var(--accent);font-weight:650}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap}
+footer p{margin:0;max-width:74ch}
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--muted);
+  flex-shrink:0;opacity:.85;transition:opacity .15s,color .15s}
+.brand:hover{opacity:1;color:var(--accent)}
+.tmark{width:26px;height:25px;display:block;flex-shrink:0}
+/* Black artwork on alpha: invert in dark mode or it vanishes into the panel. */
+@media (prefers-color-scheme:dark){.tmark{filter:invert(1)}}
+:root[data-theme="dark"] .tmark{filter:invert(1)}
+:root[data-theme="light"] .tmark{filter:none}
+.btxt{display:flex;flex-direction:column;line-height:1.25}
+.btxt b{font-size:12px;font-weight:650;color:inherit}
+.bsub{font-size:10.5px;opacity:.75}
+@media print{.brand{opacity:1}}
+@media print{
+  body{background:#fff} .wrap{max-width:none;padding:0}
+  section.doc,section.block,section.ca,.stat,.bars{break-inside:avoid;box-shadow:none}
+  nav.toc{display:none}
+}
+</style></head><body><div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">STPA · System-Theoretic Process Analysis</div>
+  <h1>Ledgerline — multi-tenant invoicing API (fictional; design document only, no code)</h1>
+  <div class="sub">Control-theoretic threat model · grid generated 2026-07-22T22:59:35.640Z</div>
+<div class="sources"><span class="k">Analyzed from</span><span class="src"><b>design-doc</b> Examples/ledgerline/DESIGN.md <span class="muted">@as committed</span></span></div>
+
+  <div class="covrow">
+    <div class="stat cov">
+      <div class="k">Analysis completeness</div>
+      <div class="v">100.0%</div>
+      <div class="h">of the 8 control actions modeled — which is <strong>100% of the system</strong></div>
+    </div>
+    <div class="stat cov">
+            <div class="k">System covered</div>
+            <div class="v">100%</div>
+            <div class="h">8 of 8 control actions in the system were modeled</div>
+          </div>
+  </div>
+  <div class="stats2">
+    <div class="stat"><div class="k">Authority-bearing actions analyzed</div><div class="v">8</div>
+      <div class="h">each asked 4 questions — one per way a control action can be unsafe</div></div>
+    <div class="stat"><div class="k">Findings</div><div class="v">8</div>
+      <div class="h">contexts where an action of this system produces a loss</div></div>
+  </div>
+  <!--
+    The 264 cells are ONE population, not four scores. Rendered as separate tiles,
+    "no issue found: 65" sits beside "findings: 199" as though it were a competing
+    result — a reader can take it as "65 things are fine". It is the remainder of
+    the same denominator, so it is drawn as a composition of that denominator.
+  -->
+  <div class="composition">
+    <div class="comphead"><span>32 questions asked</span>
+      <span class="muted">8 actions × 4 ways to be unsafe</span></div>
+    <div class="compbar">
+      <div class="cseg c-find" style="width:25%" title="8 findings"></div>
+      <div class="cseg c-ruled" style="width:75%" title="24 ruled out with a written reason"></div>
+      
+    </div>
+    <div class="complegend">
+      <span class="lg"><i class="sw c-find"></i><b>8</b> produced a finding</span>
+      <span class="lg"><i class="sw c-ruled"></i><b>24</b> ruled out, each with a written reason</span>
+      <span class="lg"><i class="sw c-open"></i><b>0</b> never answered</span>
+    </div>
+  </div>
+
+
+
+
+
+
+
+  <div class="bars"><h4>What kind of thing goes wrong <span class="barsub">bar length = how many · colour = how urgent</span></h4>
+  <div class="bar">
+        <div class="blabel"><div class="bname">Required control never happens</div><div class="bhint">a check, revocation, or record the system must do — and doesn't</div></div>
+        <div class="track"></div>
+        <div class="n">0</div>
+      </div><div class="bar">
+        <div class="blabel"><div class="bname">Unsafe action is performed</div><div class="bhint">an action the system performs in a context where it causes harm</div></div>
+        <div class="track"><div class="seg sb-1" style="width:20%" title="1 in band 1"></div><div class="seg sb-2" style="width:40%" title="2 in band 2"></div><div class="seg sb-3" style="width:20%" title="1 in band 3"></div><div class="seg sb-4" style="width:20%" title="1 in band 4"></div></div>
+        <div class="n">5</div>
+      </div><div class="bar">
+        <div class="blabel"><div class="bname">Right action, wrong moment</div><div class="bhint">too early, too late, or out of sequence with something else</div></div>
+        <div class="track"><div class="seg sb-3" style="width:20%" title="1 in band 3"></div></div>
+        <div class="n">1</div>
+      </div><div class="bar">
+        <div class="blabel"><div class="bname">Right action, wrong duration</div><div class="bhint">held open too long, or stopped before it finished doing its job</div></div>
+        <div class="track"><div class="seg sb-2" style="width:40%" title="2 in band 2"></div></div>
+        <div class="n">2</div>
+      </div>
+  <div class="barlegend"><span class="lg"><i class="sw sb-1"></i>band 1 · fix before ship</span><span class="lg"><i class="sw sb-2"></i>band 2 · this cycle</span><span class="lg"><i class="sw sb-3"></i>band 3 · scheduled</span><span class="lg"><i class="sw sb-4"></i>band 4 · accepted</span><span class="lg"><i class="sw sb-x"></i>not yet planned</span></div>
+  <p class="barfoot">These are the four ways a control action can be unsafe (STPA terms: <em>not provided</em>, <em>provided</em>, <em>wrong timing / order</em>, <em>too long / stopped too soon</em>). They describe the <strong>system</strong>, not this analysis.</p>
+  </div>
+
+  <nav class="toc">
+    <a href="#plan" class="primary">▸ Engineering plan</a>
+    <a href="#scope">Scope &amp; hazards</a>
+    <a href="#structure">Control structure</a>
+    <a href="#pm">Process models</a>
+    <a href="#grid">UCA grid</a>
+    <a href="#scenarios">Loss scenarios</a>
+    <a href="#constraints">Constraints</a>
+  </nav>
+</header>
+
+<section id="plan" class="block plan-block">
+  <h2>Engineering plan</h2>
+  <p class="lede"><strong>8 findings collapse to 4 root causes.</strong>
+  1 band-1, 4 band-2. 2 quick wins (band&nbsp;≤2, hours of work).
+  Wave&nbsp;1 is 3 items and closes 60% of everything band-2-or-worse.</p>
+
+  <div class="planstats">
+    <div class="pstat"><div class="k">Root causes</div><div class="v">4</div><div class="h">from 8 findings</div></div>
+    <div class="pstat"><div class="k">Max leverage</div><div class="v">3</div><div class="h">closed by one fix (38%)</div></div>
+    <div class="pstat"><div class="k">Quick wins</div><div class="v">2</div><div class="h">band ≤2, effort S</div></div>
+    <div class="pstat"><div class="k">Band 1 / 2</div><div class="v">1 / 4</div><div class="h">ship-blocking / this cycle</div></div>
+    <div class="pstat"><div class="k">Located</div><div class="v">100%</div><div class="h">have a file:line</div></div>
+    <div class="pstat"><div class="k">Probed</div><div class="v">100%</div><div class="h">have a runnable check</div></div>
+  </div>
+  <p class="caveat">Band is severity × context reachability — a toolkit extension, <strong>not a probability and not CVSS-comparable</strong>. It orders this analysis's findings for this team and nothing else. Effort is an analyst estimate: S ≈ hours, M ≈ days, L ≈ weeks.</p>
+
+  <div class="leadfix"><div class="k">Highest-leverage move</div>
+      <h3>Entitlement is decided from a claim, never from current state</h3>
+      <p><strong>One change closes 3 of 8 findings.</strong> Effort M · days.</p>
+      <p>The gateway mints orgId at login and never re-reads it, and the invoice service trusts the header the gateway attaches. Neither component owns the belief, so neither refreshes it. The design note 'existing sessions are not revoked' is the same defect stated as a fact.</p>
+      <p class="do"><strong>Do this:</strong> Derive org membership at the point of use, from the membership table, with a short cache. Make the gateway header advisory rather than authoritative.</p></div>
+
+  <h3>Root causes, by leverage</h3>
+  <div class="tablewrap"><table class="plan rc"><colgroup><col class="c-rcid"><col class="c-rcname"><col class="c-lev"><col class="c-band"><col class="c-eff"><col class="c-fix"></colgroup><thead><tr><th>ID</th><th>Root cause</th><th>Closes</th><th>Worst band</th><th>Effort</th><th>The one change</th></tr></thead><tbody><tr>
+      <td><span class="rcid">RC-1</span></td>
+      <td><strong>Entitlement is decided from a claim, never from current state</strong><div class="muted csum">The gateway mints orgId at login and never re-reads it, and the invoice service trusts the header the gateway attaches. Neither component owns the belief, so neither refreshes it. The design note 'existing sessions are not revoked' is the same defect stated as a fact.</div></td>
+      <td class="lev" style="text-align:center"><span class="levn">3</span><span class="muted"> / 8</span></td>
+      <td><span class="band band-2">2</span></td>
+      <td><span class="eff eff-M">M</span> <span class="effw">days</span></td>
+      <td class="fix">Derive org membership at the point of use, from the membership table, with a short cache. Make the gateway header advisory rather than authoritative.</td>
+    </tr><tr>
+      <td><span class="rcid">RC-2</span></td>
+      <td><strong>Possession of a long-lived token is treated as entitlement</strong><div class="muted csum">Pay links are UUIDv4s that never rotate or expire, and they are distributed by email — so every copy that email produces is a permanent credential. No check can distinguish the customer from anyone the customer forwarded the mail to.</div></td>
+      <td class="lev" style="text-align:center"><span class="levn">2</span><span class="muted"> / 8</span></td>
+      <td><span class="band band-2">2</span></td>
+      <td><span class="eff eff-S">S</span> <span class="effw">hours</span></td>
+      <td class="fix">Bind pay-link validity to invoice state: expire at payment, rotate on dispute, and require a second factor the customer already holds.</td>
+    </tr><tr>
+      <td><span class="rcid">RC-4</span></td>
+      <td><strong>Three of four feedback channels do not exist</strong><div class="muted csum">No pay-link access log, no impersonation notice the org can read, no webhook egress log. Every other finding here is silent, and every fix above can regress unobserved.</div></td>
+      <td class="lev" style="text-align:center"><span class="levn">2</span><span class="muted"> / 8</span></td>
+      <td><span class="band band-3">3</span></td>
+      <td><span class="eff eff-L">L</span> <span class="effw">weeks</span></td>
+      <td class="fix">Log the pay-link fetch, expose an org-readable impersonation trail, and record webhook egress destinations.</td>
+    </tr><tr>
+      <td><span class="rcid">RC-3</span></td>
+      <td><strong>Org-supplied input reaches the network without an egress control</strong><div class="muted csum">The webhook URL is a free-text field consumed from inside the production network. Validation at save cannot bind the address at dispatch.</div></td>
+      <td class="lev" style="text-align:center"><span class="levn">1</span><span class="muted"> / 8</span></td>
+      <td><span class="band band-1">1</span></td>
+      <td><span class="eff eff-M">M</span> <span class="effw">days</span></td>
+      <td class="fix">Route all webhook egress through a proxy that resolves and refuses non-public addresses at connect time.</td>
+    </tr></tbody></table></div>
+
+  <h3 class="wave w1">Wave 1 — Start here <span class="cacount">3 items</span></h3>
+      <div class="tablewrap"><table class="plan"><colgroup><col class="c-id"><col class="c-bandd"><col class="c-eff"><col class="c-loc"><col class="c-fix"><col class="c-probe"></colgroup><thead><tr><th>ID</th><th>Band<span class="thsub">severity × reach</span></th><th>Effort</th><th>Where</th><th>Do this</th><th>Verify with</th></tr></thead><tbody><tr>
+        <td><code>CA-8.provided</code><div class="rcref">RC-3</div></td>
+        <td class="bandcell"><span class="band band-1">1</span>
+          <div class="bandwhy"><span class="sev sev-catastrophic">catastrophic</span> <span class="mult">×</span> <span class="reach" title="R1 — adversary induces it through normal interaction">R1</span></div></td>
+        <td><span class="eff eff-M">M</span> <span class="effw">days</span></td>
+        <td class="loc"><code>DESIGN.md — 'the webhook URL is whatever the org typed'</code></td>
+        <td class="fix">Egress proxy that resolves at connect time and refuses non-public addresses.</td>
+        <td class="probe"><code>Configure a host resolving to 169.254.169.254 → connection refused and logged.</code></td>
+      </tr><tr>
+        <td><code>CA-3.provided</code><div class="rcref">RC-2</div></td>
+        <td class="bandcell"><span class="band band-2">2</span>
+          <div class="bandwhy"><span class="sev sev-severe">severe</span> <span class="mult">×</span> <span class="reach" title="R1 — adversary induces it through normal interaction">R1</span></div></td>
+        <td><span class="eff eff-S">S</span> <span class="effw">hours</span></td>
+        <td class="loc"><code>DESIGN.md — 'pay-link token is a UUIDv4 ... never rotates'</code></td>
+        <td class="fix">Expire the token on payment or void; rotate on dispute.</td>
+        <td class="probe"><code>Pay an invoice, re-fetch by token → expect 410.</code></td>
+      </tr><tr>
+        <td><code>CA-3.duration</code><div class="rcref">RC-2</div></td>
+        <td class="bandcell"><span class="band band-2">2</span>
+          <div class="bandwhy"><span class="sev sev-severe">severe</span> <span class="mult">×</span> <span class="reach" title="R1 — adversary induces it through normal interaction">R1</span></div></td>
+        <td><span class="eff eff-S">S</span> <span class="effw">hours</span></td>
+        <td class="loc"><code>DESIGN.md — pay-link section</code></td>
+        <td class="fix">Give the token a TTL independent of invoice state as a backstop.</td>
+        <td class="probe"><code>Fetch a token older than the TTL → expect 410.</code></td>
+      </tr></tbody></table></div><h3 class="wave w2">Wave 2 — This cycle <span class="cacount">2 items</span></h3>
+      <div class="tablewrap"><table class="plan"><colgroup><col class="c-id"><col class="c-bandd"><col class="c-eff"><col class="c-loc"><col class="c-fix"><col class="c-probe"></colgroup><thead><tr><th>ID</th><th>Band<span class="thsub">severity × reach</span></th><th>Effort</th><th>Where</th><th>Do this</th><th>Verify with</th></tr></thead><tbody><tr>
+        <td><code>CA-2.provided</code><div class="rcref">RC-1</div></td>
+        <td class="bandcell"><span class="band band-2">2</span>
+          <div class="bandwhy"><span class="sev sev-severe">severe</span> <span class="mult">×</span> <span class="reach" title="R1 — adversary induces it through normal interaction">R1</span></div></td>
+        <td><span class="eff eff-M">M</span> <span class="effw">days</span></td>
+        <td class="loc"><code>DESIGN.md — 'Invoice service — scoped by the orgId the gateway attached'</code></td>
+        <td class="fix">Look up current membership at the point of use instead of trusting the claim.</td>
+        <td class="probe"><code>Remove a member, call an invoice route with the pre-removal token → expect 403.</code></td>
+      </tr><tr>
+        <td><code>CA-6.duration</code><div class="rcref">RC-1</div></td>
+        <td class="bandcell"><span class="band band-2">2</span>
+          <div class="bandwhy"><span class="sev sev-severe">severe</span> <span class="mult">×</span> <span class="reach" title="R1 — adversary induces it through normal interaction">R1</span></div></td>
+        <td><span class="eff eff-M">M</span> <span class="effw">days</span></td>
+        <td class="loc"><code>DESIGN.md — 'existing sessions are not revoked'</code></td>
+        <td class="fix">Sweep and invalidate sessions on membership removal.</td>
+        <td class="probe"><code>Remove a member with a live session; assert the session is rejected within 60s.</code></td>
+      </tr></tbody></table></div><h3 class="wave w3">Wave 3 — Scheduled <span class="cacount">2 items</span></h3>
+      <div class="tablewrap"><table class="plan"><colgroup><col class="c-id"><col class="c-bandd"><col class="c-eff"><col class="c-loc"><col class="c-fix"><col class="c-probe"></colgroup><thead><tr><th>ID</th><th>Band<span class="thsub">severity × reach</span></th><th>Effort</th><th>Where</th><th>Do this</th><th>Verify with</th></tr></thead><tbody><tr>
+        <td><code>CA-1.timing-order</code><div class="rcref">RC-1</div></td>
+        <td class="bandcell"><span class="band band-3">3</span>
+          <div class="bandwhy"><span class="sev sev-moderate">moderate</span> <span class="mult">×</span> <span class="reach" title="R2 — adversary waits for it to arise">R2</span></div></td>
+        <td><span class="eff eff-S">S</span> <span class="effw">hours</span></td>
+        <td class="loc"><code>DESIGN.md — 'attaches orgId from the token'</code></td>
+        <td class="fix">Stop treating the login-time claim as an entitlement; carry identity, derive authority.</td>
+        <td class="probe"><code>Assert no route reads orgId from the token without a membership lookup.</code></td>
+      </tr><tr>
+        <td><code>CA-5.provided</code><div class="rcref">RC-4</div></td>
+        <td class="bandcell"><span class="band band-3">3</span>
+          <div class="bandwhy"><span class="sev sev-severe">severe</span> <span class="mult">×</span> <span class="reach" title="R3 — requires a prior foothold">R3</span></div></td>
+        <td><span class="eff eff-M">M</span> <span class="effw">days</span></td>
+        <td class="loc"><code>DESIGN.md — support console section</code></td>
+        <td class="fix">Require a recorded reason, and expose the impersonation trail to the organisation.</td>
+        <td class="probe"><code>Assert an org-readable audit row exists for every staff:true session.</code></td>
+      </tr></tbody></table></div><h3 class="wave w4">Wave 4 — Accept in writing <span class="cacount">1 item</span></h3>
+      <div class="tablewrap"><table class="plan"><colgroup><col class="c-id"><col class="c-bandd"><col class="c-eff"><col class="c-loc"><col class="c-fix"><col class="c-probe"></colgroup><thead><tr><th>ID</th><th>Band<span class="thsub">severity × reach</span></th><th>Effort</th><th>Where</th><th>Do this</th><th>Verify with</th></tr></thead><tbody><tr>
+        <td><code>CA-7.provided</code><div class="rcref">RC-4</div></td>
+        <td class="bandcell"><span class="band band-4">4</span>
+          <div class="bandwhy"><span class="sev sev-moderate">moderate</span> <span class="mult">×</span> <span class="reach" title="R3 — requires a prior foothold">R3</span></div></td>
+        <td><span class="eff eff-S">S</span> <span class="effw">hours</span></td>
+        <td class="loc"><code>DESIGN.md — reminder job section</code></td>
+        <td class="fix">Resolve the recipient at send time and log which contact was used.</td>
+        <td class="probe"><code>Change the org contact, trigger a reminder, assert the new contact received it.</code></td>
+      </tr></tbody></table></div>
+
+  <h3>Legend</h3>
+  <div class="tablewrap"><table><thead><tr><th>Band</th><th>Means</th><th>Reachability</th><th>Means</th></tr></thead><tbody>
+  <tr><td><span class="band band-1">1</span></td><td>Fix before ship</td><td><code>R0</code></td><td>adversary creates the context directly</td></tr>
+  <tr><td><span class="band band-2">2</span></td><td>Fix this cycle</td><td><code>R1</code></td><td>adversary induces it through normal interaction</td></tr>
+  <tr><td><span class="band band-3">3</span></td><td>Constrain &amp; schedule</td><td><code>R2</code></td><td>adversary waits for it to arise</td></tr>
+  <tr><td><span class="band band-4">4</span></td><td>Accept in writing</td><td><code>R3</code></td><td>requires a prior foothold</td></tr>
+  <tr><td></td><td></td><td><code>R4</code></td><td>requires an insider or supply-chain compromise</td></tr>
+  </tbody></table></div>
+  </section>
+
+<section id="scope" class="doc"><h2>1 · Scope, losses and hazards</h2><h1>Scope, losses and hazards</h1>
+<p><strong>Target:</strong> Ledgerline — multi-tenant invoicing API. <strong>Modality B</strong>: the design document is the only input; no code exists. Surface 100% (8/8 control actions described by the document).</p>
+<h2>Losses</h2>
+<ul>
+<li><strong>L-1</strong> — one organisation's invoice data is disclosed to a party outside that organisation.</li>
+<li><strong>L-2</strong> — Ledgerline staff read customer data without a business reason, and the customer cannot tell.</li>
+</ul>
+<p>Availability losses are deliberately <strong>not</strong> declared. Tombstones that cite &quot;out of hazard&quot; name which loss they fall outside, so the boundary is legible rather than implied.</p>
+<h2>Hazards — system states, never attacker actions</h2>
+<ul>
+<li><strong>H-1</strong> — the system serves invoice data to a principal whose entitlement to that organisation is not current. <em>(→ L-1)</em></li>
+<li><strong>H-2</strong> — the system grants a staff principal access to an organisation's data with no record the organisation can read. <em>(→ L-2)</em></li>
+<li><strong>H-3</strong> — the system delivers organisation event data to a network endpoint it has not established is external and org-controlled. <em>(→ L-1)</em></li>
+</ul>
+<p>Note the shape. &quot;An attacker guesses a pay-link token&quot; is not a hazard — it is an attacker action. The hazard is the state the system is in: <em>serving invoice data to a principal whose entitlement is not current</em>. Guessing the token is one way to reach that state; so is a forwarded email, a browser-history export, and a support agent pasting the link into a ticket. Writing the state instead of the action is what makes the finding survive techniques nobody has thought of yet.</p>
+<h2>Assumptions log</h2>
+<p>Modality B produces one every time, and on a real review it is often the most valuable artifact — each line is a question for the document's author.</p>
+<div class="tablewrap"><table><thead><tr><th>#</th><th>Assumed</th><th>Because the document does not say</th><th>Ask</th></tr></thead><tbody><tr><td>A-1</td><td>Session tokens are bearer JWTs with a lifetime measured in hours</td><td>&quot;validates the session JWT&quot;</td><td>What is the TTL, and is there a revocation list?</td></tr><tr><td>A-2</td><td>The gateway sets an internal header the invoice service trusts</td><td>&quot;attaches <code>orgId</code> from the token&quot;</td><td>Can a client set that header directly? Is the gateway the only ingress?</td></tr><tr><td>A-3</td><td>Downstream services do not read the <code>staff: true</code> claim</td><td>It is described as carried, never as consumed</td><td>Which services branch on it? What do they do differently?</td></tr><tr><td>A-4</td><td>Pay-link tokens appear in emails sent to customers</td><td>&quot;a public pay link lets a customer view and pay&quot;</td><td>How is the link delivered, and to how many recipients?</td></tr><tr><td>A-5</td><td>The webhook dispatcher runs inside the production network</td><td>It is listed as a component with no isolation note</td><td>Does it egress through a proxy? Is there an allow-list?</td></tr><tr><td>A-6</td><td>Removal from an org is a database update with no session sweep</td><td>&quot;existing sessions are not revoked&quot;</td><td>Is that a decision or an omission?</td></tr></tbody></table></div>
+<p><strong>A-6 is the highest-value line in the table.</strong> The document states it as a fact in a review note, and it is the direct cause of two of the eight findings. In a real review this is the moment to ask whether anyone realised they were writing down a vulnerability.</p></section>
+<section id="structure" class="doc"><h2>2 · Control structure</h2><h1>Control structure</h1>
+<p>Read entirely off <code>DESIGN.md</code>. Six controllers, eight control actions, four feedback channels — three of which do not exist.</p>
+<h2>Process models — the highest-yield table in the analysis</h2>
+<p>Six of eight findings trace to a row here. Note how each belief was extracted: the document never writes &quot;the gateway <em>trusts</em> the orgId claim&quot;, it writes that the gateway <em>attaches</em> orgId <em>from</em> the token. Same sentence, read as <code>believes / sourced from / staleness</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>ID</th><th>Controller believes</th><th>Sourced from</th><th>Staleness</th></tr></thead><tbody><tr><td><strong>PM-1</strong></td><td>the <code>orgId</code> in the token is the caller's current org</td><td>the JWT claim, minted at login, never re-read</td><td>token lifetime — and the review notes say removal does not revoke sessions, so it is wrong for exactly that long</td></tr><tr><td><strong>PM-2</strong></td><td>the presenter of a pay-link token is the invoice's customer</td><td>possession of a UUIDv4 that never rotates</td><td><strong>permanent</strong> — the token outlives the payment, the relationship and any dispute</td></tr><tr><td><strong>PM-3</strong></td><td>an impersonation session is distinguishable from the member's own</td><td>a <code>staff: true</code> claim no service is documented to read</td><td>asserted, never checked</td></tr><tr><td><strong>PM-4</strong></td><td>the <code>orgId</code> attached by the gateway is authoritative</td><td>a header set upstream, trusted without re-derivation</td><td>per request, and only ever as good as PM-1</td></tr><tr><td><strong>PM-5</strong></td><td>the email on an overdue invoice is still the right recipient</td><td>the invoice row as written at issue time</td><td>unbounded — an invoice stays overdue for months</td></tr><tr><td><strong>PM-6</strong></td><td>the configured webhook URL is an external endpoint the org controls</td><td>a free-text settings field, no validation described</td><td>whatever was last typed</td></tr></tbody></table></div>
+<h2>Feedback</h2>
+<div class="tablewrap"><table><thead><tr><th>ID</th><th>Channel</th><th>State</th></tr></thead><tbody><tr><td><strong>F-1</strong></td><td>pay-link service → org</td><td><strong>ABSENT.</strong> No record of who fetched an invoice by token, so scraping is indistinguishable from a customer opening their bill</td></tr><tr><td><strong>F-2</strong></td><td>support console → impersonated member</td><td><strong>ABSENT.</strong> The member is never told, and has no audit surface to read</td></tr><tr><td><strong>F-3</strong></td><td>webhook dispatcher → security review</td><td><strong>ABSENT.</strong> No allow-list check and no egress log on an org-supplied URL</td></tr><tr><td><strong>F-4</strong></td><td>invoice service → org</td><td>Present (invoice audit trail)</td></tr></tbody></table></div>
+<p>Three of four channels do not exist. That is a Step-2 finding on its own: no unsafe control action is required for it to hurt you, because it is what makes every other finding silent.</p></section>
+
+<section id="pm" class="block"><h2>Process models &amp; feedback</h2>
+  <p>What each controller <em>believes</em>, where the belief comes from, and how stale it can be. Process-model inconsistency is the general form of the authorization bug — this table is where most findings originate.</p>
+  <div class="tablewrap"><table><thead><tr><th>ID</th><th>Controller</th><th>Believes</th><th>Sourced from</th><th>Staleness</th></tr></thead><tbody><tr><td><code>PM-1</code></td><td>API gateway</td><td>the orgId in the token is the caller's current org</td><td>the JWT claim, minted at login and never re-read</td><td>token lifetime — the review notes say removal does not revoke existing sessions, so this is wrong for exactly as long as a token lives</td></tr><tr><td><code>PM-2</code></td><td>Pay-link service</td><td>the presenter of a pay-link token is the invoice's customer</td><td>possession of a UUIDv4 that never rotates</td><td>permanent — the token outlives the payment, the customer relationship, and any dispute</td></tr><tr><td><code>PM-3</code></td><td>Support console</td><td>an impersonation session is distinguishable from the member's own session</td><td>a staff:true claim that downstream services are not documented to read</td><td>the belief is asserted, never checked</td></tr><tr><td><code>PM-4</code></td><td>Invoice service</td><td>the orgId attached by the gateway is authoritative</td><td>a header set by an upstream component, trusted without re-derivation</td><td>per request, and only as good as PM-1</td></tr><tr><td><code>PM-5</code></td><td>Reminder job</td><td>the email address on an overdue invoice is still the right recipient</td><td>the invoice row as written at issue time</td><td>unbounded — an invoice can be overdue for months after the contact changed</td></tr><tr><td><code>PM-6</code></td><td>Webhook dispatcher</td><td>the configured webhook URL is an external endpoint the org controls</td><td>a free-text settings field with no validation described</td><td>whatever was last typed</td></tr></tbody></table></div>
+  <h3>Feedback channels</h3><div class="tablewrap"><table><thead><tr><th>ID</th><th>Path</th><th>Signal</th></tr></thead><tbody><tr><td><code>F-1</code></td><td>pay-link service → org</td><td>NONE — no record of who fetched an invoice by token, so scraping is indistinguishable from a customer opening their bill</td></tr><tr><td><code>F-2</code></td><td>support console → impersonated member</td><td>NONE — the member is never told they were impersonated; the document describes no notification and no audit surface they can read</td></tr><tr><td><code>F-3</code></td><td>webhook dispatcher → security review</td><td>NONE — no allow-list check or egress log on the org-supplied URL</td></tr><tr><td><code>F-4</code></td><td>invoice service → org</td><td>invoice audit trail — described in the document and assumed present</td></tr></tbody></table></div>
+  </section>
+
+<section id="grid" class="block"><h2>3 · Unsafe control actions</h2>
+<p>Every control action considered against all four UCA types — <strong>32</strong> cells. A cell resolves as a finding bound to a declared control-structure element, or as a tombstone with a written reason. Both are results; an open cell is not.</p>
+</section>
+<section class="ca">
+      <h3><span class="caid">CA-1</span> issue a session for a member
+        <span class="ctrl">API gateway</span>
+        <span class="cacount">1 finding</span></h3>
+      <div class="tablewrap"><table class="grid">
+        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
+        <tbody><tr class="tombstone">
+          <td class="ttype">Required control never happens</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Unsafe action is performed</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="uca">
+          <td class="ttype">Right action, wrong moment</td>
+          <td><span class="pill pill-uca">UCA</span></td>
+          <td class="tbody">The API gateway mints a session carrying an orgId before membership is confirmed current, leading to H-1 for the token's lifetime.</td>
+          <td class="tmeta"><code>PM-1</code></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong duration</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr></tbody>
+      </table></div>
+    </section><section class="ca">
+      <h3><span class="caid">CA-2</span> serve an invoice to a session
+        <span class="ctrl">Invoice service</span>
+        <span class="cacount">1 finding</span></h3>
+      <div class="tablewrap"><table class="grid">
+        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
+        <tbody><tr class="tombstone">
+          <td class="ttype">Required control never happens</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="uca">
+          <td class="ttype">Unsafe action is performed</td>
+          <td><span class="pill pill-uca">UCA</span></td>
+          <td class="tbody">The invoice service serves an invoice to a session when the session's orgId claim no longer matches the caller's current membership, leading to H-1 (a former member reads an org's invoices).</td>
+          <td class="tmeta"><code>PM-1</code> <code>PM-4</code></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong moment</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong duration</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr></tbody>
+      </table></div>
+    </section><section class="ca">
+      <h3><span class="caid">CA-3</span> serve an invoice by pay-link token
+        <span class="ctrl">Pay-link service</span>
+        <span class="cacount">2 findings</span></h3>
+      <div class="tablewrap"><table class="grid">
+        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
+        <tbody><tr class="tombstone">
+          <td class="ttype">Required control never happens</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="uca">
+          <td class="ttype">Unsafe action is performed</td>
+          <td><span class="pill pill-uca">UCA</span></td>
+          <td class="tbody">The pay-link service serves an invoice when the presenter is anyone who has ever seen the link, including after the customer relationship ends, leading to H-1 (invoice contents disclosed to a non-customer).</td>
+          <td class="tmeta"><code>PM-2</code> <code>F-1</code></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong moment</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="uca">
+          <td class="ttype">Right action, wrong duration</td>
+          <td><span class="pill pill-uca">UCA</span></td>
+          <td class="tbody">The pay-link service keeps honouring a pay-link token indefinitely after the invoice is paid, leading to H-1.</td>
+          <td class="tmeta"><code>PM-2</code></td>
+          <td class="tmeta"></td>
+        </tr></tbody>
+      </table></div>
+    </section><section class="ca">
+      <h3><span class="caid">CA-4</span> modify or void an invoice
+        <span class="ctrl">Invoice service</span>
+        <span class="cacount">0 findings</span></h3>
+      <div class="tablewrap"><table class="grid">
+        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
+        <tbody><tr class="tombstone">
+          <td class="ttype">Required control never happens</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Unsafe action is performed</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong moment</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong duration</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr></tbody>
+      </table></div>
+    </section><section class="ca">
+      <h3><span class="caid">CA-5</span> grant a staff member an impersonation session
+        <span class="ctrl">Support console</span>
+        <span class="cacount">1 finding</span></h3>
+      <div class="tablewrap"><table class="grid">
+        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
+        <tbody><tr class="tombstone">
+          <td class="ttype">Required control never happens</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="uca">
+          <td class="ttype">Unsafe action is performed</td>
+          <td><span class="pill pill-uca">UCA</span></td>
+          <td class="tbody">The support console grants an impersonation session when the staff member has no ticket or consent tying them to that org, leading to H-2 (staff read customer data without a business reason).</td>
+          <td class="tmeta"><code>PM-3</code> <code>F-2</code></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong moment</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong duration</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr></tbody>
+      </table></div>
+    </section><section class="ca">
+      <h3><span class="caid">CA-6</span> remove a member from an org
+        <span class="ctrl">API gateway</span>
+        <span class="cacount">1 finding</span></h3>
+      <div class="tablewrap"><table class="grid">
+        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
+        <tbody><tr class="tombstone">
+          <td class="ttype">Required control never happens</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Unsafe action is performed</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong moment</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="uca">
+          <td class="ttype">Right action, wrong duration</td>
+          <td><span class="pill pill-uca">UCA</span></td>
+          <td class="tbody">The API gateway continues to honour sessions minted before a member was removed, for the remainder of the token lifetime, leading to H-1.</td>
+          <td class="tmeta"><code>PM-1</code></td>
+          <td class="tmeta"></td>
+        </tr></tbody>
+      </table></div>
+    </section><section class="ca">
+      <h3><span class="caid">CA-7</span> send an overdue reminder email
+        <span class="ctrl">Reminder job</span>
+        <span class="cacount">1 finding</span></h3>
+      <div class="tablewrap"><table class="grid">
+        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
+        <tbody><tr class="tombstone">
+          <td class="ttype">Required control never happens</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="uca">
+          <td class="ttype">Unsafe action is performed</td>
+          <td><span class="pill pill-uca">UCA</span></td>
+          <td class="tbody">The reminder job emails an overdue invoice to the address captured at issue time when that address is no longer the customer's, leading to H-1.</td>
+          <td class="tmeta"><code>PM-5</code></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong moment</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong duration</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr></tbody>
+      </table></div>
+    </section><section class="ca">
+      <h3><span class="caid">CA-8</span> dispatch a payment webhook
+        <span class="ctrl">Webhook dispatcher</span>
+        <span class="cacount">1 finding</span></h3>
+      <div class="tablewrap"><table class="grid">
+        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
+        <tbody><tr class="tombstone">
+          <td class="ttype">Required control never happens</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="uca">
+          <td class="ttype">Unsafe action is performed</td>
+          <td><span class="pill pill-uca">UCA</span></td>
+          <td class="tbody">The webhook dispatcher POSTs a payment event when the configured URL points at an internal address, leading to H-3 (internal endpoints reached from inside the trust boundary, and event contents delivered to an unintended host).</td>
+          <td class="tmeta"><code>PM-6</code> <code>F-3</code></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong moment</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr><tr class="tombstone">
+          <td class="ttype">Right action, wrong duration</td>
+          <td><span class="pill pill-tomb">no hazard</span></td>
+          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
+          <td class="tmeta"></td>
+          <td class="tmeta"></td>
+        </tr></tbody>
+      </table></div>
+    </section>
+
+<section id="scenarios" class="doc"><h2>4 · Loss scenarios</h2><h1>Loss scenarios</h1>
+<p><strong>Part A</strong> — why the unsafe control action occurs. <strong>Part B</strong> — why a <em>correct</em> control action fails to land. Part B is the bypass class, and Step 3 structurally cannot reach it, because in Part B nothing unsafe was ever commanded.</p>
+<p>---</p>
+<h2>S-1 — A removed member keeps reading invoices · CA-2.provided, CA-6.duration, CA-1.timing-order · PM-1, PM-4</h2>
+<p><strong>Part A.</strong> The gateway mints <code>orgId</code> into the token at login and never re-reads it. The invoice service then trusts the header the gateway attaches, so the belief is laundered through two components without either one owning it. Remove a member and the row changes; the token does not. For the rest of the token's lifetime the system serves that member their former org's invoices, and every component involved is behaving exactly as designed.</p>
+<p><strong>Part B.</strong> Re-reading membership on every request fixes the API and does not fix the loss, because <strong>the session is not the only credential that outlives the relationship</strong>. That member has pay links in their inbox (S-2), an export they downloaded last week, and possibly a webhook URL they configured that still points at a host they control (S-3). Revocation that reaches only the session boundary leaves three other paths open — and the design document describes no inventory of what a departing member holds, so nobody can enumerate them.</p>
+<p>---</p>
+<h2>S-2 — The pay link is permanent · CA-3.provided, CA-3.duration · PM-2, F-1</h2>
+<p><strong>Part A.</strong> Entitlement is possession of a UUIDv4 that never rotates and never expires. UUIDv4 is unguessable, so this is not a brute-force finding — it is a <strong>distribution</strong> finding. The token is emailed, which means it lands in a mailbox, a mail archive, a forwarded thread, a shared inbox, a helpdesk ticket, and a browser history. Every one of those is a copy that outlives the payment.</p>
+<p><strong>Part B — the cleanest bypass in this example.</strong> Suppose the token check is perfect. It is <em>still</em> correct to serve the invoice to whoever presents it, because the design defines entitlement as possession. No authorization logic can distinguish the customer from the person the customer forwarded the mail to; the control loop is working exactly as specified and the data leaves anyway. The fix is therefore not in the check — it is in the <strong>lifetime and the binding</strong>: expire the token at payment, rotate on dispute, and require a second factor the customer already has. And with <strong>F-1 absent</strong>, nobody can even measure how often this happens, so there is no evidence to motivate the change.</p>
+<p>---</p>
+<h2>S-3 — The webhook URL is an SSRF primitive · CA-8.provided · PM-6, F-3</h2>
+<p><strong>Part A.</strong> The org types a URL into a settings field and the dispatcher POSTs to it from inside the production network. PM-6 believes the URL is an external endpoint the org controls; nothing establishes either half of that belief. <code>http://169.254.169.254/</code>, <code>http://localhost:6379/</code>, and an internal admin host are all valid strings.</p>
+<p><strong>Part B.</strong> An allow-list on save is the obvious control and it is bypassable without any incorrect control action occurring: <strong>the name resolves at dispatch, not at save.</strong> A hostname that validated cleanly on Tuesday can point at a link-local address on Wednesday — DNS rebinding needs nothing in the request path to malfunction. Validation and use are separated by an interval the design does not close, which is a TOCTOU with a network in the middle. The control has to live at egress — a proxy that resolves and refuses — not at the form.</p>
+<p>---</p>
+<h2>S-4 — Impersonation is invisible · CA-5.provided · PM-3, F-2</h2>
+<p><strong>Part A.</strong> Staff select a member and receive a session acting as them. The document describes no ticket requirement, no consent step, and no scope limit. PM-3 asserts the <code>staff: true</code> claim makes the session distinguishable, but the document names no service that reads it — an assertion with no consumer.</p>
+<p><strong>Part B.</strong> Add the ticket requirement and the loss survives, because <strong>the record is written where the affected party cannot read it</strong>. F-2 does not exist: the member is never notified, and there is no audit surface exposed to the organisation. Internal logging satisfies the auditor and does nothing for the customer — and the customer is the only party with both the motive and the context to spot an impersonation that had a plausible ticket attached to it. Accountability that only points inward is not accountability to the person whose data was read.</p>
+<p>---</p>
+<h2>S-5 — The reminder emails the wrong person · CA-7.provided · PM-5</h2>
+<p><strong>Part A.</strong> The recipient is snapshotted onto the invoice at issue time. An invoice can be overdue for months; contacts change, people leave, addresses get reassigned. The job faithfully mails invoice contents to an address that was correct once.</p>
+<p><strong>Part B.</strong> Reading the current contact at send time fixes the common case and introduces its own: the <em>current</em> contact may be a person who was not party to the original transaction. There is no single correct answer here, which is exactly why it belongs in the design review rather than in a ticket. The finding's real output is a question for the author — <strong>whose invoice is it, the org's or the individual's?</strong> — and the document does not say.</p></section>
+<section id="constraints" class="doc"><h2>5 · Security constraints</h2><h1>Security constraints</h1>
+<div class="tablewrap"><table><thead><tr><th>ID</th><th>Constraint</th><th>Probe</th></tr></thead><tbody><tr><td><strong>SC-1</strong></td><td>An authorization decision MUST NOT rely on an <code>orgId</code> claim without confirming current membership.</td><td>Test: remove a member, then call an invoice route with their pre-removal token → 403.</td></tr><tr><td><strong>SC-2</strong></td><td>A pay-link token MUST NOT remain valid after the invoice is paid or voided.</td><td>Test: pay an invoice, re-fetch by token → 410.</td></tr><tr><td><strong>SC-3</strong></td><td>The invoice service MUST NOT trust an <code>orgId</code> header that a client could set.</td><td>Test: send the header directly, bypassing the gateway → rejected.</td></tr><tr><td><strong>SC-4</strong></td><td>A staff impersonation session MUST NOT be established without a recorded reason visible to the impersonated organisation.</td><td>Assert an org-readable audit row exists for every session with <code>staff: true</code>.</td></tr><tr><td><strong>SC-5</strong></td><td>The webhook dispatcher MUST NOT connect to an address outside the public-internet ranges, resolved <strong>at dispatch time</strong>.</td><td>Test: configure a hostname that resolves to 169.254.169.254 at dispatch → connection refused and logged.</td></tr><tr><td><strong>SC-6</strong></td><td>Pay-link fetches MUST be recorded with source and timestamp.</td><td>Assert a row exists per fetch; alert on N fetches from distinct sources for one invoice.</td></tr></tbody></table></div></section>
+
+<footer>
+<p>Generated by <strong>stpa</strong> · method: STPA (Leveson &amp; Thomas, <em>STPA Handbook</em>, 2018) with the STPA-Sec security framing (Young &amp; Leveson, <em>CACM</em> 57(2), 2014).
+Coverage counts findings bound to a declared control-structure element plus reasoned tombstones. The stopping rule and the prioritisation banding are additions to STPA, not STPA doctrine, and are never probabilities.</p>
+<a class="brand" href="https://triarchsecurity.com" target="_blank" rel="noopener noreferrer">
+<img class="tmark" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABGCAYAAABv59I3AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAADRmVYSWZNTQAqAAAACAAIARIAAwAAAAEAAQAAARoABQAAAAEAAABuARsABQAAAAEAAAB2ASgAAwAAAAEAAgAAATEAAgAAAAgAAAB+ATIAAgAAABQAAACGATsAAgAAABAAAACah2kABAAAAAEAAACqAAAAAAAAAGAAAAABAAAAYAAAAAFQaWNzYXJ0ADIwMjY6MDI6MTUgMTA6MjU6NTEAdHJpYXJjaHNlY3VyaXR5AAAFkAMAAgAAABQAAADsoAEAAwAAAAEAAQAAoAIABAAAAAEAAABIoAMABAAAAAEAAABGpDAAAgAAAkUAAAEAAAAAADIwMjY6MDI6MTUgMTA6MjU6NTEAeyJzdWJzb3VyY2UiOiJkb25lX2J1dHRvbiIsInVpZCI6IkE0QTM4RTQwLTM5QjQtNDVERC04NzRCLUM4MkMyMDAwOUJERSIsInNvdXJjZSI6Im90aGVyIiwib3JpZ2luIjoidW5rbm93biIsInRyYW5zcGFyZW5jeV92YWx1ZSI6eyJtYXhfYWxwaGEiOjEsIm1pbl9hbHBoYSI6MCwib3BhY2l0eTkwIjp7InBlcmNlbnRhZ2UiOjkzLjkwNzk4OTUwMTk1MzEyNSwib3BhcXVlX2JvdW5kcyI6eyJ5IjoxODQsInciOjEwMjUsIngiOjIwNSwiaCI6OTg0fX0sIm9wYWNpdHkwIjp7InBlcmNlbnRhZ2UiOjkyLjE2Mjg1NzA1NTY2NDA2Miwib3BhcXVlX2JvdW5kcyI6eyJ5IjoxODAsInciOjEwMzIsIngiOjIwMSwiaCI6OTkyfX0sIm9wYWNpdHk5OSI6eyJwZXJjZW50YWdlIjo5NC40MTAxOTQzOTY5NzI2NTYsIm9wYXF1ZV9ib3VuZHMiOnsieSI6MTg1LCJ3IjoxMDIzLCJ4IjoyMDYsImgiOjk4Mn19fSwidXRfdHlwZV9tZXRhIjoicHVibGljLnBuZyIsInVzZWRfc291cmNlcyI6IntcInZlcnNpb25cIjoxLFwic291cmNlc1wiOltdfSIsImlzX3JlbWl4IjpmYWxzZSwicHJlbWl1bV9zb3VyY2VzIjpbXSwiZnRlX3NvdXJjZXMiOltdfQAASBEMHAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAB3JpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDYuMC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6ZXhpZj0iaHR0cDovL25zLmFkb2JlLmNvbS9leGlmLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIKICAgICAgICAgICAgeG1sbnM6ZXhpZkVYPSJodHRwOi8vY2lwYS5qcC9leGlmLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyI+CiAgICAgICAgIDxleGlmOkNvbG9yU3BhY2U+MTwvZXhpZjpDb2xvclNwYWNlPgogICAgICAgICA8ZXhpZjpQaXhlbFhEaW1lbnNpb24+MTAwPC9leGlmOlBpeGVsWERpbWVuc2lvbj4KICAgICAgICAgPGV4aWY6UGl4ZWxZRGltZW5zaW9uPjk4PC9leGlmOlBpeGVsWURpbWVuc2lvbj4KICAgICAgICAgPHhtcDpNb2RpZnlEYXRlPjIwMjYtMDItMTVUMTA6MjU6NTE8L3htcDpNb2RpZnlEYXRlPgogICAgICAgICA8eG1wOkNyZWF0b3JUb29sPlBpY3NhcnQ8L3htcDpDcmVhdG9yVG9vbD4KICAgICAgICAgPHRpZmY6UmVzb2x1dGlvblVuaXQ+MjwvdGlmZjpSZXNvbHV0aW9uVW5pdD4KICAgICAgICAgPHRpZmY6T3JpZW50YXRpb24+MTwvdGlmZjpPcmllbnRhdGlvbj4KICAgICAgICAgPHRpZmY6WFJlc29sdXRpb24+OTY8L3RpZmY6WFJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOllSZXNvbHV0aW9uPjk2PC90aWZmOllSZXNvbHV0aW9uPgogICAgICAgICA8cGhvdG9zaG9wOkRhdGVDcmVhdGVkPjIwMjYtMDItMTVUMTA6MjU6NTE8L3Bob3Rvc2hvcDpEYXRlQ3JlYXRlZD4KICAgICAgICAgPGV4aWZFWDpDYW1lcmFPd25lck5hbWU+eyJzdWJzb3VyY2UiOiJkb25lX2J1dHRvbiIsInVpZCI6IkE0QTM4RTQwLTM5QjQtNDVERC04NzRCLUM4MkMyMDAwOUJERSIsInNvdXJjZSI6Im90aGVyIiwib3JpZ2luIjoidW5rbm93biIsInRyYW5zcGFyZW5jeV92YWx1ZSI6eyJtYXhfYWxwaGEiOjEsIm1pbl9hbHBoYSI6MCwib3BhY2l0eTkwIjp7InBlcmNlbnRhZ2UiOjkzLjkwNzk4OTUwMTk1MzEyNSwib3BhcXVlX2JvdW5kcyI6eyJ5IjoxODQsInciOjEwMjUsIngiOjIwNSwiaCI6OTg0fX0sIm9wYWNpdHkwIjp7InBlcmNlbnRhZ2UiOjkyLjE2Mjg1NzA1NTY2NDA2Miwib3BhcXVlX2JvdW5kcyI6eyJ5IjoxODAsInciOjEwMzIsIngiOjIwMSwiaCI6OTkyfX0sIm9wYWNpdHk5OSI6eyJwZXJjZW50YWdlIjo5NC40MTAxOTQzOTY5NzI2NTYsIm9wYXF1ZV9ib3VuZHMiOnsieSI6MTg1LCJ3IjoxMDIzLCJ4IjoyMDYsImgiOjk4Mn19fSwidXRfdHlwZV9tZXRhIjoicHVibGljLnBuZyIsInVzZWRfc291cmNlcyI6IntcInZlcnNpb25cIjoxLFwic291cmNlc1wiOltdfSIsImlzX3JlbWl4IjpmYWxzZSwicHJlbWl1bV9zb3VyY2VzIjpbXSwiZnRlX3NvdXJjZXMiOltdfTwvZXhpZkVYOkNhbWVyYU93bmVyTmFtZT4KICAgICAgICAgPGRj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" alt="" width="26" height="25">
+  <span class="btxt"><b>Triarch Security</b><span class="bsub">triarchsecurity.com</span></span>
+</a>
+</footer>
+</div></body></html>

@@ -1,0 +1,389 @@
+{
+  "system": "Ledgerline \u2014 multi-tenant invoicing API (fictional; design document only, no code)",
+  "generated": "2026-07-22T22:59:35.640Z",
+  "totalCells": 32,
+  "scope": {
+    "requested": "full",
+    "candidateControlActions": 8,
+    "selectionCriteria": "Every authority-bearing action named in DESIGN.md. Design-doc modality: the control structure is read off the component list and the review notes, so 'full' means every action the document describes \u2014 the document itself is the boundary.",
+    "sources": [
+      {
+        "type": "design-doc",
+        "locator": "Examples/ledgerline/DESIGN.md",
+        "ref": "as committed",
+        "note": "no codebase exists; all process models are inferred from prose and recorded as assumptions"
+      }
+    ],
+    "deferred": []
+  },
+  "declaredElements": [
+    "PM-1",
+    "PM-2",
+    "PM-3",
+    "PM-4",
+    "PM-5",
+    "PM-6",
+    "F-1",
+    "F-2",
+    "F-3",
+    "F-4"
+  ],
+  "cells": [
+    {
+      "id": "CA-1.not-provided",
+      "controlActionId": "CA-1",
+      "controlAction": "issue a session for a member",
+      "controller": "API gateway",
+      "ucaType": "not-provided",
+      "ucaTypeLabel": "Not providing causes hazard",
+      "state": "tombstone",
+      "reason": "Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined \u2014 re-run with an availability loss declared to resolve it."
+    },
+    {
+      "id": "CA-1.provided",
+      "controlActionId": "CA-1",
+      "controlAction": "issue a session for a member",
+      "controller": "API gateway",
+      "ucaType": "provided",
+      "ucaTypeLabel": "Providing causes hazard",
+      "state": "tombstone",
+      "reason": "No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here."
+    },
+    {
+      "id": "CA-1.timing-order",
+      "controlActionId": "CA-1",
+      "controlAction": "issue a session for a member",
+      "controller": "API gateway",
+      "ucaType": "timing-order",
+      "ucaTypeLabel": "Wrong timing or order (too early / too late / out of order)",
+      "state": "uca",
+      "statement": "The API gateway mints a session carrying an orgId before membership is confirmed current, leading to H-1 for the token's lifetime.",
+      "bindsTo": [
+        "PM-1"
+      ],
+      "note": "login-time claim"
+    },
+    {
+      "id": "CA-1.duration",
+      "controlActionId": "CA-1",
+      "controlAction": "issue a session for a member",
+      "controller": "API gateway",
+      "ucaType": "duration",
+      "ucaTypeLabel": "Applied too long or stopped too soon",
+      "state": "tombstone",
+      "reason": "This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved."
+    },
+    {
+      "id": "CA-2.not-provided",
+      "controlActionId": "CA-2",
+      "controlAction": "serve an invoice to a session",
+      "controller": "Invoice service",
+      "ucaType": "not-provided",
+      "ucaTypeLabel": "Not providing causes hazard",
+      "state": "tombstone",
+      "reason": "Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined \u2014 re-run with an availability loss declared to resolve it."
+    },
+    {
+      "id": "CA-2.provided",
+      "controlActionId": "CA-2",
+      "controlAction": "serve an invoice to a session",
+      "controller": "Invoice service",
+      "ucaType": "provided",
+      "ucaTypeLabel": "Providing causes hazard",
+      "state": "uca",
+      "statement": "The invoice service serves an invoice to a session when the session's orgId claim no longer matches the caller's current membership, leading to H-1 (a former member reads an org's invoices).",
+      "bindsTo": [
+        "PM-1",
+        "PM-4"
+      ],
+      "note": "src: DESIGN.md 'Members can be removed; existing sessions are not revoked'"
+    },
+    {
+      "id": "CA-2.timing-order",
+      "controlActionId": "CA-2",
+      "controlAction": "serve an invoice to a session",
+      "controller": "Invoice service",
+      "ucaType": "timing-order",
+      "ucaTypeLabel": "Wrong timing or order (too early / too late / out of order)",
+      "state": "tombstone",
+      "reason": "No ordering dependency in this action reaches a hazard state \u2014 it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order."
+    },
+    {
+      "id": "CA-2.duration",
+      "controlActionId": "CA-2",
+      "controlAction": "serve an invoice to a session",
+      "controller": "Invoice service",
+      "ucaType": "duration",
+      "ucaTypeLabel": "Applied too long or stopped too soon",
+      "state": "tombstone",
+      "reason": "This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved."
+    },
+    {
+      "id": "CA-3.not-provided",
+      "controlActionId": "CA-3",
+      "controlAction": "serve an invoice by pay-link token",
+      "controller": "Pay-link service",
+      "ucaType": "not-provided",
+      "ucaTypeLabel": "Not providing causes hazard",
+      "state": "tombstone",
+      "reason": "Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined \u2014 re-run with an availability loss declared to resolve it."
+    },
+    {
+      "id": "CA-3.provided",
+      "controlActionId": "CA-3",
+      "controlAction": "serve an invoice by pay-link token",
+      "controller": "Pay-link service",
+      "ucaType": "provided",
+      "ucaTypeLabel": "Providing causes hazard",
+      "state": "uca",
+      "statement": "The pay-link service serves an invoice when the presenter is anyone who has ever seen the link, including after the customer relationship ends, leading to H-1 (invoice contents disclosed to a non-customer).",
+      "bindsTo": [
+        "PM-2",
+        "F-1"
+      ],
+      "note": "UUIDv4 stored on the row, never rotates"
+    },
+    {
+      "id": "CA-3.timing-order",
+      "controlActionId": "CA-3",
+      "controlAction": "serve an invoice by pay-link token",
+      "controller": "Pay-link service",
+      "ucaType": "timing-order",
+      "ucaTypeLabel": "Wrong timing or order (too early / too late / out of order)",
+      "state": "tombstone",
+      "reason": "No ordering dependency in this action reaches a hazard state \u2014 it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order."
+    },
+    {
+      "id": "CA-3.duration",
+      "controlActionId": "CA-3",
+      "controlAction": "serve an invoice by pay-link token",
+      "controller": "Pay-link service",
+      "ucaType": "duration",
+      "ucaTypeLabel": "Applied too long or stopped too soon",
+      "state": "uca",
+      "statement": "The pay-link service keeps honouring a pay-link token indefinitely after the invoice is paid, leading to H-1.",
+      "bindsTo": [
+        "PM-2"
+      ],
+      "note": "no expiry described"
+    },
+    {
+      "id": "CA-4.not-provided",
+      "controlActionId": "CA-4",
+      "controlAction": "modify or void an invoice",
+      "controller": "Invoice service",
+      "ucaType": "not-provided",
+      "ucaTypeLabel": "Not providing causes hazard",
+      "state": "tombstone",
+      "reason": "Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined \u2014 re-run with an availability loss declared to resolve it."
+    },
+    {
+      "id": "CA-4.provided",
+      "controlActionId": "CA-4",
+      "controlAction": "modify or void an invoice",
+      "controller": "Invoice service",
+      "ucaType": "provided",
+      "ucaTypeLabel": "Providing causes hazard",
+      "state": "tombstone",
+      "reason": "No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here."
+    },
+    {
+      "id": "CA-4.timing-order",
+      "controlActionId": "CA-4",
+      "controlAction": "modify or void an invoice",
+      "controller": "Invoice service",
+      "ucaType": "timing-order",
+      "ucaTypeLabel": "Wrong timing or order (too early / too late / out of order)",
+      "state": "tombstone",
+      "reason": "No ordering dependency in this action reaches a hazard state \u2014 it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order."
+    },
+    {
+      "id": "CA-4.duration",
+      "controlActionId": "CA-4",
+      "controlAction": "modify or void an invoice",
+      "controller": "Invoice service",
+      "ucaType": "duration",
+      "ucaTypeLabel": "Applied too long or stopped too soon",
+      "state": "tombstone",
+      "reason": "This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved."
+    },
+    {
+      "id": "CA-5.not-provided",
+      "controlActionId": "CA-5",
+      "controlAction": "grant a staff member an impersonation session",
+      "controller": "Support console",
+      "ucaType": "not-provided",
+      "ucaTypeLabel": "Not providing causes hazard",
+      "state": "tombstone",
+      "reason": "Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined \u2014 re-run with an availability loss declared to resolve it."
+    },
+    {
+      "id": "CA-5.provided",
+      "controlActionId": "CA-5",
+      "controlAction": "grant a staff member an impersonation session",
+      "controller": "Support console",
+      "ucaType": "provided",
+      "ucaTypeLabel": "Providing causes hazard",
+      "state": "uca",
+      "statement": "The support console grants an impersonation session when the staff member has no ticket or consent tying them to that org, leading to H-2 (staff read customer data without a business reason).",
+      "bindsTo": [
+        "PM-3",
+        "F-2"
+      ],
+      "note": "no gating described"
+    },
+    {
+      "id": "CA-5.timing-order",
+      "controlActionId": "CA-5",
+      "controlAction": "grant a staff member an impersonation session",
+      "controller": "Support console",
+      "ucaType": "timing-order",
+      "ucaTypeLabel": "Wrong timing or order (too early / too late / out of order)",
+      "state": "tombstone",
+      "reason": "No ordering dependency in this action reaches a hazard state \u2014 it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order."
+    },
+    {
+      "id": "CA-5.duration",
+      "controlActionId": "CA-5",
+      "controlAction": "grant a staff member an impersonation session",
+      "controller": "Support console",
+      "ucaType": "duration",
+      "ucaTypeLabel": "Applied too long or stopped too soon",
+      "state": "tombstone",
+      "reason": "This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved."
+    },
+    {
+      "id": "CA-6.not-provided",
+      "controlActionId": "CA-6",
+      "controlAction": "remove a member from an org",
+      "controller": "API gateway",
+      "ucaType": "not-provided",
+      "ucaTypeLabel": "Not providing causes hazard",
+      "state": "tombstone",
+      "reason": "Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined \u2014 re-run with an availability loss declared to resolve it."
+    },
+    {
+      "id": "CA-6.provided",
+      "controlActionId": "CA-6",
+      "controlAction": "remove a member from an org",
+      "controller": "API gateway",
+      "ucaType": "provided",
+      "ucaTypeLabel": "Providing causes hazard",
+      "state": "tombstone",
+      "reason": "No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here."
+    },
+    {
+      "id": "CA-6.timing-order",
+      "controlActionId": "CA-6",
+      "controlAction": "remove a member from an org",
+      "controller": "API gateway",
+      "ucaType": "timing-order",
+      "ucaTypeLabel": "Wrong timing or order (too early / too late / out of order)",
+      "state": "tombstone",
+      "reason": "No ordering dependency in this action reaches a hazard state \u2014 it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order."
+    },
+    {
+      "id": "CA-6.duration",
+      "controlActionId": "CA-6",
+      "controlAction": "remove a member from an org",
+      "controller": "API gateway",
+      "ucaType": "duration",
+      "ucaTypeLabel": "Applied too long or stopped too soon",
+      "state": "uca",
+      "statement": "The API gateway continues to honour sessions minted before a member was removed, for the remainder of the token lifetime, leading to H-1.",
+      "bindsTo": [
+        "PM-1"
+      ],
+      "note": "DESIGN.md review notes"
+    },
+    {
+      "id": "CA-7.not-provided",
+      "controlActionId": "CA-7",
+      "controlAction": "send an overdue reminder email",
+      "controller": "Reminder job",
+      "ucaType": "not-provided",
+      "ucaTypeLabel": "Not providing causes hazard",
+      "state": "tombstone",
+      "reason": "Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined \u2014 re-run with an availability loss declared to resolve it."
+    },
+    {
+      "id": "CA-7.provided",
+      "controlActionId": "CA-7",
+      "controlAction": "send an overdue reminder email",
+      "controller": "Reminder job",
+      "ucaType": "provided",
+      "ucaTypeLabel": "Providing causes hazard",
+      "state": "uca",
+      "statement": "The reminder job emails an overdue invoice to the address captured at issue time when that address is no longer the customer's, leading to H-1.",
+      "bindsTo": [
+        "PM-5"
+      ],
+      "note": "invoice row snapshot"
+    },
+    {
+      "id": "CA-7.timing-order",
+      "controlActionId": "CA-7",
+      "controlAction": "send an overdue reminder email",
+      "controller": "Reminder job",
+      "ucaType": "timing-order",
+      "ucaTypeLabel": "Wrong timing or order (too early / too late / out of order)",
+      "state": "tombstone",
+      "reason": "No ordering dependency in this action reaches a hazard state \u2014 it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order."
+    },
+    {
+      "id": "CA-7.duration",
+      "controlActionId": "CA-7",
+      "controlAction": "send an overdue reminder email",
+      "controller": "Reminder job",
+      "ucaType": "duration",
+      "ucaTypeLabel": "Applied too long or stopped too soon",
+      "state": "tombstone",
+      "reason": "This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved."
+    },
+    {
+      "id": "CA-8.not-provided",
+      "controlActionId": "CA-8",
+      "controlAction": "dispatch a payment webhook",
+      "controller": "Webhook dispatcher",
+      "ucaType": "not-provided",
+      "ucaTypeLabel": "Not providing causes hazard",
+      "state": "tombstone",
+      "reason": "Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined \u2014 re-run with an availability loss declared to resolve it."
+    },
+    {
+      "id": "CA-8.provided",
+      "controlActionId": "CA-8",
+      "controlAction": "dispatch a payment webhook",
+      "controller": "Webhook dispatcher",
+      "ucaType": "provided",
+      "ucaTypeLabel": "Providing causes hazard",
+      "state": "uca",
+      "statement": "The webhook dispatcher POSTs a payment event when the configured URL points at an internal address, leading to H-3 (internal endpoints reached from inside the trust boundary, and event contents delivered to an unintended host).",
+      "bindsTo": [
+        "PM-6",
+        "F-3"
+      ],
+      "note": "free-text settings field"
+    },
+    {
+      "id": "CA-8.timing-order",
+      "controlActionId": "CA-8",
+      "controlAction": "dispatch a payment webhook",
+      "controller": "Webhook dispatcher",
+      "ucaType": "timing-order",
+      "ucaTypeLabel": "Wrong timing or order (too early / too late / out of order)",
+      "state": "tombstone",
+      "reason": "No ordering dependency in this action reaches a hazard state \u2014 it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order."
+    },
+    {
+      "id": "CA-8.duration",
+      "controlActionId": "CA-8",
+      "controlAction": "dispatch a payment webhook",
+      "controller": "Webhook dispatcher",
+      "ucaType": "duration",
+      "ucaTypeLabel": "Applied too long or stopped too soon",
+      "state": "tombstone",
+      "reason": "This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved."
+    }
+  ]
+}

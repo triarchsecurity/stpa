@@ -1,0 +1,106 @@
+{
+  "clusters": [
+    {
+      "id": "RC-1",
+      "name": "Entitlement is decided from a claim, never from current state",
+      "summary": "The gateway mints orgId at login and never re-reads it, and the invoice service trusts the header the gateway attaches. Neither component owns the belief, so neither refreshes it. The design note 'existing sessions are not revoked' is the same defect stated as a fact.",
+      "fix": "Derive org membership at the point of use, from the membership table, with a short cache. Make the gateway header advisory rather than authoritative.",
+      "effort": "M"
+    },
+    {
+      "id": "RC-2",
+      "name": "Possession of a long-lived token is treated as entitlement",
+      "summary": "Pay links are UUIDv4s that never rotate or expire, and they are distributed by email \u2014 so every copy that email produces is a permanent credential. No check can distinguish the customer from anyone the customer forwarded the mail to.",
+      "fix": "Bind pay-link validity to invoice state: expire at payment, rotate on dispute, and require a second factor the customer already holds.",
+      "effort": "S"
+    },
+    {
+      "id": "RC-3",
+      "name": "Org-supplied input reaches the network without an egress control",
+      "summary": "The webhook URL is a free-text field consumed from inside the production network. Validation at save cannot bind the address at dispatch.",
+      "fix": "Route all webhook egress through a proxy that resolves and refuses non-public addresses at connect time.",
+      "effort": "M"
+    },
+    {
+      "id": "RC-4",
+      "name": "Three of four feedback channels do not exist",
+      "summary": "No pay-link access log, no impersonation notice the org can read, no webhook egress log. Every other finding here is silent, and every fix above can regress unobserved.",
+      "fix": "Log the pay-link fetch, expose an org-readable impersonation trail, and record webhook egress destinations.",
+      "effort": "L"
+    }
+  ],
+  "findings": {
+    "CA-2.provided": {
+      "severity": "severe",
+      "reachability": "R1",
+      "effort": "M",
+      "cluster": "RC-1",
+      "location": "DESIGN.md \u2014 'Invoice service \u2014 scoped by the orgId the gateway attached'",
+      "fix": "Look up current membership at the point of use instead of trusting the claim.",
+      "probe": "Remove a member, call an invoice route with the pre-removal token \u2192 expect 403."
+    },
+    "CA-6.duration": {
+      "severity": "severe",
+      "reachability": "R1",
+      "effort": "M",
+      "cluster": "RC-1",
+      "location": "DESIGN.md \u2014 'existing sessions are not revoked'",
+      "fix": "Sweep and invalidate sessions on membership removal.",
+      "probe": "Remove a member with a live session; assert the session is rejected within 60s."
+    },
+    "CA-1.timing-order": {
+      "severity": "moderate",
+      "reachability": "R2",
+      "effort": "S",
+      "cluster": "RC-1",
+      "location": "DESIGN.md \u2014 'attaches orgId from the token'",
+      "fix": "Stop treating the login-time claim as an entitlement; carry identity, derive authority.",
+      "probe": "Assert no route reads orgId from the token without a membership lookup."
+    },
+    "CA-3.provided": {
+      "severity": "severe",
+      "reachability": "R1",
+      "effort": "S",
+      "cluster": "RC-2",
+      "location": "DESIGN.md \u2014 'pay-link token is a UUIDv4 ... never rotates'",
+      "fix": "Expire the token on payment or void; rotate on dispute.",
+      "probe": "Pay an invoice, re-fetch by token \u2192 expect 410."
+    },
+    "CA-3.duration": {
+      "severity": "severe",
+      "reachability": "R1",
+      "effort": "S",
+      "cluster": "RC-2",
+      "location": "DESIGN.md \u2014 pay-link section",
+      "fix": "Give the token a TTL independent of invoice state as a backstop.",
+      "probe": "Fetch a token older than the TTL \u2192 expect 410."
+    },
+    "CA-8.provided": {
+      "severity": "catastrophic",
+      "reachability": "R1",
+      "effort": "M",
+      "cluster": "RC-3",
+      "location": "DESIGN.md \u2014 'the webhook URL is whatever the org typed'",
+      "fix": "Egress proxy that resolves at connect time and refuses non-public addresses.",
+      "probe": "Configure a host resolving to 169.254.169.254 \u2192 connection refused and logged."
+    },
+    "CA-5.provided": {
+      "severity": "severe",
+      "reachability": "R3",
+      "effort": "M",
+      "cluster": "RC-4",
+      "location": "DESIGN.md \u2014 support console section",
+      "fix": "Require a recorded reason, and expose the impersonation trail to the organisation.",
+      "probe": "Assert an org-readable audit row exists for every staff:true session."
+    },
+    "CA-7.provided": {
+      "severity": "moderate",
+      "reachability": "R3",
+      "effort": "S",
+      "cluster": "RC-4",
+      "location": "DESIGN.md \u2014 reminder job section",
+      "fix": "Resolve the recipient at send time and log which contact was used.",
+      "probe": "Change the org contact, trigger a reminder, assert the new contact received it."
+    }
+  }
+}
