@@ -24,6 +24,8 @@ Runs Steps 1–4 plus constraint emission against a target. Use when the target 
 
 ## Steps
 
+0. **Optional STRIDE pre-pass — run `SeedWithStride.md` first when a design document exists.** It runs the Fabric `create_stride_threat_model` pattern and folds the result into the STPA inputs: its **trust boundaries** seed the trust-zone layer (the layer whose absence is the top rating error), its **data flows** seed control actions, its **assets** seed controlled processes and cross-check the losses, and its **threat table** enriches the Step-4 scenarios. STRIDE and STPA are complementary — the pre-pass covers the component/technique class STPA under-enumerates while STPA still supplies the emergent/authorization class STRIDE misses. Skip it on a pure code target with no design doc, or run it against a hand-written architecture summary.
+
 1. **Run `ScopeAndLosses.md`.** Do not delegate this — the boundary and loss list are the judgment calls the whole analysis rests on, and they need the full context of the conversation with whoever owns the system. If the system's owner is available, this step is a conversation, not an inference.
 
 2. **Run `ModelControlStructure.md`.** Start with `stpa scan`, then do the human work of step 2 (invisible controllers) and step 6 (process models). Modality A, B, or both.

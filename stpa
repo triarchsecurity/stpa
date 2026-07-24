@@ -164,6 +164,8 @@ switch (cmd) {
     process.exit(run("Prioritize.ts", rest));
   case "report":
     process.exit(run("RenderReport.ts", rest));
+  case "verify":
+    process.exit(run("VerifyGate.ts", rest));
   case "run": {
     const dir = rest[0] ?? ".stpa";
     // Scope contract first. A report that is complete in every other respect but
@@ -181,8 +183,16 @@ switch (cmd) {
       console.error(`   but the report will carry an INCOMPLETE banner and this command will exit`);
       console.error(`   non-zero. A report with no plan tells nobody what to do first.\n`);
     }
+    // Adversarial peer-review gate. Output that no independent model has reviewed
+    // must not reach a human as final — a model rationalises its own inflation.
+    const v = run("VerifyGate.ts", [dir]);
+    if (v !== 0) {
+      console.error(`\n!! NOT INDEPENDENTLY REVIEWED (exit ${v}). Rendering so you can see the findings,`);
+      console.error(`   but the report will carry a NOT-PEER-REVIEWED banner and this command exits`);
+      console.error(`   non-zero. Run the adversarial-review pass with a different model, then re-run.\n`);
+    }
     const r = run("RenderReport.ts", [dir]);
-    process.exit(r !== 0 ? r : sc !== 0 ? sc : a);
+    process.exit(r !== 0 ? r : sc !== 0 ? sc : v !== 0 ? v : a);
   }
   default:
     console.error(`unknown command: ${cmd}\n\n${USAGE}`);
