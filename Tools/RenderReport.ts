@@ -191,7 +191,17 @@ function md(src: string): string {
         out.push("<ul>");
         inList = true;
       }
-      out.push(`<li>${inline(line.replace(/^[-*]\s+/, ""))}</li>`);
+      let item = line.replace(/^[-*]\s+/, "");
+      // fold indented soft-wrapped continuation lines into the same list item
+      while (
+        i + 1 < lines.length &&
+        /^\s+\S/.test(lines[i + 1]!) &&
+        !/^\s*[-*]\s+/.test(lines[i + 1]!) &&
+        !lines[i + 1]!.startsWith("```")
+      ) {
+        item += " " + lines[++i]!.trim();
+      }
+      out.push(`<li>${inline(item)}</li>`);
       i++;
       continue;
     }
@@ -202,8 +212,22 @@ function md(src: string): string {
       continue;
     }
 
+    // paragraph: a markdown soft-wrap (single newline) is one paragraph, not many.
+    // Accumulate consecutive plain lines until a blank line or a block element.
     closeList();
-    out.push(`<p>${inline(line)}</p>`);
+    const para: string[] = [line];
+    while (
+      i + 1 < lines.length &&
+      lines[i + 1]!.trim() &&
+      !/^[-*]\s+/.test(lines[i + 1]!) &&
+      !/^#{1,6}\s/.test(lines[i + 1]!) &&
+      !/^>\s/.test(lines[i + 1]!) &&
+      !lines[i + 1]!.startsWith("```") &&
+      !/^\|.*\|\s*$/.test(lines[i + 1]!)
+    ) {
+      para.push(lines[++i]!);
+    }
+    out.push(`<p>${inline(para.join(" "))}</p>`);
     i++;
   }
   closeList();
@@ -303,50 +327,51 @@ const model = (() => {
 
 const title = titleOverride ?? grid.system ?? "STPA Threat Model";
 
-// ── findings, grouped by control action ───────────────────────────────────
+// ── findings, grouped by control action, then collapsed by plane ───────────
 const byCA = new Map<string, Cell[]>();
 for (const c of grid.cells) {
   if (!byCA.has(c.controlActionId)) byCA.set(c.controlActionId, []);
   byCA.get(c.controlActionId)!.push(c);
 }
 
-const findingCards = [...byCA.entries()]
-  .map(([id, cells]) => {
-    const first = cells[0]!;
-    const rows = cells
-      .map((c) => {
-        const state =
-          c.state === "uca"
-            ? isBound(c)
-              ? `<span class="pill pill-uca">UCA</span>`
-              : `<span class="pill pill-unbound">UCA · unbound</span>`
-            : c.state === "tombstone"
-              ? `<span class="pill pill-tomb">no hazard</span>`
-              : `<span class="pill pill-open">OPEN</span>`;
-        const body = c.state === "uca" ? c.statement : c.state === "tombstone" ? c.reason : "—";
-        const binds = (c.bindsTo ?? []).map((b) => `<code>${esc(b)}</code>`).join(" ");
-        const links = (c.linksTo ?? []).map((b) => `<code>${esc(b)}</code>`).join(" ");
-        return `<tr class="${c.state}">
-          <td class="ttype">${esc(UCA_TYPE_LABEL[c.ucaType] ?? c.ucaType)}</td>
-          <td>${state}</td>
-          <td class="tbody">${inline(body ?? "")}</td>
-          <td class="tmeta">${binds}</td>
-          <td class="tmeta">${links}</td>
-        </tr>`;
-      })
-      .join("");
-    const n = cells.filter((c) => c.state === "uca").length;
-    return `<section class="ca">
-      <h3><span class="caid">${esc(id)}</span> ${esc(first.controlAction)}
-        <span class="ctrl">${esc(first.controller)}</span>
-        <span class="cacount">${n} finding${n === 1 ? "" : "s"}</span></h3>
-      <div class="tablewrap"><table class="grid">
-        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>
-    </section>`;
-  })
-  .join("");
+const prettyPlane = (p: string) => p.replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+
+// one card (table of the 4 UCA-type cells) per control action
+const caCardHtml = (id: string, cells: Cell[]): string => {
+  const first = cells[0]!;
+  const rows = cells
+    .map((c) => {
+      const state =
+        c.state === "uca"
+          ? isBound(c)
+            ? `<span class="pill pill-uca">UCA</span>`
+            : `<span class="pill pill-unbound">UCA · unbound</span>`
+          : c.state === "tombstone"
+            ? `<span class="pill pill-tomb">no hazard</span>`
+            : `<span class="pill pill-open">OPEN</span>`;
+      const body = c.state === "uca" ? c.statement : c.state === "tombstone" ? c.reason : "—";
+      const binds = (c.bindsTo ?? []).map((b) => `<code>${esc(b)}</code>`).join(" ");
+      const links = (c.linksTo ?? []).map((b) => `<code>${esc(b)}</code>`).join(" ");
+      return `<tr class="${c.state}"><td class="ttype">${esc(UCA_TYPE_LABEL[c.ucaType] ?? c.ucaType)}</td><td>${state}</td><td class="tbody">${inline(body ?? "")}</td><td class="tmeta">${binds}</td><td class="tmeta">${links}</td></tr>`;
+    })
+    .join("");
+  const n = cells.filter((c) => c.state === "uca").length;
+  return `<section class="ca"><h3><span class="caid">${esc(id)}</span> ${esc(first.controlAction)}<span class="ctrl">${esc(first.controller)}</span><span class="cacount">${n} finding${n === 1 ? "" : "s"}</span></h3><div class="tablewrap"><table class="grid"><thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+};
+
+// group control actions by their plane; falls back to one group when cells carry no plane
+const planeSeq: string[] = [];
+const caByPlane = new Map<string, string[]>();
+for (const id of byCA.keys()) {
+  const pl = (byCA.get(id)!.find((c) => (c as any).plane)?.["plane" as keyof Cell] as unknown as string) || "";
+  const key = pl || "All control actions";
+  if (!caByPlane.has(key)) {
+    caByPlane.set(key, []);
+    planeSeq.push(key);
+  }
+  caByPlane.get(key)!.push(id);
+}
+// findingCards defined after bandOf (needs band data for the band-1 badge)
 
 const pmRows = (model?.processModels ?? [])
   .flatMap((pm: any) =>
@@ -429,8 +454,7 @@ const planHtml = (() => {
     )
     .join("");
 
-  return `<section id="plan" class="block plan-block">
-  <h2>Engineering plan</h2>
+  return `<section id="plan"><details class="fold plan-block"><summary><span class="foldh">10 · Engineering plan</span><span class="gcount"><span class="gbadge">${m.findings} findings → ${m.rootCauses || (plan.clusters ?? []).length} root causes</span>${m.wave1Size ? `<span class="gbadge b1">Wave 1 · ${m.wave1Size} item${m.wave1Size === 1 ? "" : "s"}</span>` : ""}</span></summary><div class="foldbody">
   <p class="lede"><strong>${m.findings} findings collapse to ${m.rootCauses || (plan.clusters ?? []).length} root causes.</strong>
   ${m.bands.band1} band-1, ${m.bands.band2} band-2. ${m.quickWins} quick win${m.quickWins === 1 ? "" : "s"} (band&nbsp;≤2, hours of work).
   Wave&nbsp;1 is ${m.wave1Size} item${m.wave1Size === 1 ? "" : "s"} and closes ${m.wave1CoversUrgentPct}% of everything band-2-or-worse.</p>
@@ -468,17 +492,281 @@ const planHtml = (() => {
   <tr><td><span class="band band-4">4</span></td><td>${BAND_LABEL[4]}</td><td><code>R3</code></td><td>requires a prior foothold</td></tr>
   <tr><td></td><td></td><td><code>R4</code></td><td>requires an insider or supply-chain compromise</td></tr>
   </tbody></table></div>
-  </section>`;
+  </div></details></section>`;
 })();
 
-const section = (id: string, heading: string, body: string | null) =>
-  body ? `<section id="${id}" class="doc"><h2>${esc(heading)}</h2>${md(body)}</section>` : "";
+// drop a doc's own leading heading — the collapsible summary already labels the section
+const dropTopHeading = (m: string) => m.replace(/^\s*#{1,6}\s+.*\r?\n?/, "");
+const section = (id: string, heading: string, body: string | null, open = false) =>
+  body
+    ? `<section id="${id}"><details class="fold"${open ? " open" : ""}><summary><span class="foldh">${esc(heading)}</span></summary><div class="foldbody doc">${md(dropTopHeading(body))}</div></details></section>`
+    : "";
 
 // Band per cell id, when a plan exists. Length = how many; colour = how bad.
 // Colouring every bar the same red made the biggest category look like the worst
 // one, which encodes count as severity — the wrong claim.
 const bandOf = new Map<string, number>();
 for (const w of plan?.waves ?? []) for (const it of w.items ?? []) bandOf.set(it.id, it.band);
+
+// Per-plane collapsed groups: one <details> per plane, summary carries the counts
+// so the reader sees the shape before opening. Collapsed by default; a big grid is
+// a wall of tables otherwise.
+const singlePlane = planeSeq.length === 1;
+const findingCards = planeSeq
+  .map((plane) => {
+    const ids = caByPlane.get(plane)!;
+    const cells = ids.flatMap((id) => byCA.get(id)!);
+    const f = cells.filter((c) => c.state === "uca").length;
+    const t = cells.filter((c) => c.state === "tombstone").length;
+    const b1 = cells.filter((c) => bandOf.get(c.id) === 1).length;
+    const cards = ids.map((id) => caCardHtml(id, byCA.get(id)!)).join("");
+    const title = plane === "All control actions" ? plane : prettyPlane(plane);
+    const badges =
+      `<span class="gbadge f">${f} finding${f === 1 ? "" : "s"}</span>` +
+      `<span class="gbadge t">${t} ruled out</span>` +
+      (b1 ? `<span class="gbadge b1">${b1} band-1</span>` : "") +
+      `<span class="gbadge">${ids.length} action${ids.length === 1 ? "" : "s"}</span>`;
+    return `<details class="planegroup"${singlePlane ? " open" : ""}><summary><span class="foldh">${esc(title)}</span><span class="gcount">${badges}</span></summary><div class="pgbody">${cards}</div></details>`;
+  })
+  .join("");
+
+// ── "What's at stake": the human layer — losses + hazards in plain language ──
+// Parsed from 01-scope.md so it stays in sync with the analysis. Hazards are
+// ranked by how many findings reach them, which turns the finding count into a
+// map of which dangerous states are most live — readable without any code.
+const scopeMd = read("01-scope.md") ?? "";
+const parseLH = (letter: string): { id: string; title: string; text: string }[] => {
+  const out: { id: string; title: string; text: string }[] = [];
+  // capture the whole item, including soft-wrapped continuation lines, up to the
+  // next list item / blank line / heading
+  const re = new RegExp(`-\\s*\\*\\*(${letter}-\\d+)[^*]*\\*\\*\\s*([\\s\\S]*?)(?=\\n\\s*-\\s*\\*\\*|\\n\\s*\\n|\\n#|$)`, "g");
+  for (const m of scopeMd.matchAll(re)) {
+    const boldInner = (m[0].match(/\*\*([^*]+)\*\*/)?.[1] ?? m[1]).trim();
+    const title = boldInner
+      .replace(new RegExp(`^${letter}-\\d+\\s*[—:–-]?\\s*`), "")
+      .replace(/[.:]\s*$/, "")
+      .trim();
+    const text = (m[2] ?? "")
+      .replace(/\s+/g, " ")
+      .replace(/`?\[[^\]]*\]`?/g, "")
+      .replace(/[`*_]/g, "")
+      .trim();
+    out.push({ id: m[1]!, title, text });
+  }
+  return out;
+};
+const losses = parseLH("L");
+const hazards = parseLH("H");
+const hazCount = new Map<string, { n: number; worst: number }>();
+for (const c of findings)
+  for (const h of c.linksTo ?? []) {
+    const cur = hazCount.get(h) ?? { n: 0, worst: 9 };
+    cur.n++;
+    const b = bandOf.get(c.id);
+    if (b && b < cur.worst) cur.worst = b;
+    hazCount.set(h, cur);
+  }
+const atStakeHtml =
+  losses.length || hazards.length
+    ? `<section id="stake"><details class="fold stake" open><summary><span class="foldh">4 · What's at stake</span></summary><div class="foldbody">
+
+  <p class="lede">The losses this system must avoid, and the hazardous states that lead to them. Everything below — the plan, the control structure, the ${findings.length} findings — exists to keep the system out of these states.</p>
+  ${
+    losses.length
+      ? `<h3>Losses <span class="muted">— what would actually hurt, in business terms</span></h3>
+  <ul class="stakelist">${losses.map((l) => `<li><span class="lid">${esc(l.id)}</span> ${l.title ? `<strong>${esc(l.title)}</strong>` : ""}${l.text ? ` — ${esc(l.text)}` : ""}</li>`).join("")}</ul>`
+      : ""
+  }
+  ${
+    hazards.length
+      ? `<h3>Hazards <span class="muted">— unsafe system states, ranked by how many findings reach them</span></h3>
+  <div class="tablewrap"><table class="hz"><thead><tr><th>Hazard</th><th>What it means (a state, not an attack)</th><th>Findings</th><th>Worst</th></tr></thead><tbody>${[...hazards]
+    .sort((a, b) => (hazCount.get(b.id)?.n ?? 0) - (hazCount.get(a.id)?.n ?? 0))
+    .map((h) => {
+      const hc = hazCount.get(h.id);
+      const n = hc?.n ?? 0;
+      const worst = hc && hc.worst < 9 ? hc.worst : null;
+      return `<tr><td><span class="hid">${esc(h.id)}</span></td><td>${esc(h.title || h.text)}</td><td class="hzn">${n ? `<span class="hcount">${n}</span>` : '<span class="muted">0</span>'}</td><td>${worst ? `<span class="band band-${worst}">${worst}</span>` : '<span class="muted">—</span>'}</td></tr>`;
+    })
+    .join("")}</tbody></table></div>`
+      : ""
+  }
+</div></details></section>`
+    : "";
+
+// ── narrative slices of 01-scope.md, so the report reads as a story instead of
+// re-dumping the whole file (the "Scope" section used to duplicate What's at stake) ──
+const scopeSecMap = new Map<string, string>();
+{
+  const idxs: { t: string; s: number }[] = [];
+  for (const mm of scopeMd.matchAll(/^##\s+(.*)$/gm)) idxs.push({ t: mm[1]!.trim(), s: mm.index! });
+  scopeSecMap.set("_pre", scopeMd.slice(0, idxs.length ? idxs[0]!.s : scopeMd.length));
+  for (let k = 0; k < idxs.length; k++) {
+    const e = k + 1 < idxs.length ? idxs[k + 1]!.s : scopeMd.length;
+    scopeSecMap.set(idxs[k]!.t.toLowerCase(), scopeMd.slice(idxs[k]!.s, e));
+  }
+}
+const scopeSec = (prefix: string): string | null => {
+  for (const [k, v] of scopeSecMap) if (k.startsWith(prefix)) return v;
+  return null;
+};
+const overviewMd = (scopeSecMap.get("_pre") ?? "").replace(/^\s*#{1,6}\s+.*\r?\n?/, "").trim();
+const boundaryMd = scopeSec("boundary");
+const assumptionsMd = scopeSec("assumption");
+const subsystems = planeSeq.filter((p) => p !== "All control actions").map(prettyPlane);
+
+// §1 — what the system is (visible; the story opener)
+const overviewHtml = overviewMd
+  ? `<section id="overview"><details class="fold" open><summary><span class="foldh">1 · What this system is</span></summary><div class="foldbody doc">${md(overviewMd)}</div></details></section>`
+  : "";
+
+// §2 — how it's built: a generated high-level control-structure loop diagram
+// (self-contained SVG, no JS, theme-aware via CSS vars), then the full detail folded under it.
+const systemDiagramSvg = (() => {
+  const W = 940;
+  const e2 = (s: string) => String(s).replace(/[&<>]/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[m]!);
+  const short = (nm: string) => {
+    nm = nm.replace(/\s*\(.*$/, "").trim();
+    return nm.length > 26 ? nm.slice(0, 24) + "…" : nm;
+  };
+  const rawActors: string[] = ((model as any)?.controllers ?? []).filter((c: any) => c.type && c.type !== "automated").map((c: any) => String(c.name));
+  const humanish = rawActors.filter(
+    (a) =>
+      /operator|\buser\b|human|principal|staff|support|customer|tenant|person|people|engineer/i.test(a) &&
+      !/resolver|node|handler|service|engine|daemon|worker|store|pool|middleware|gate|server|mechanism|runtime|processor|client/i.test(a),
+  );
+  const pick = [...new Set(humanish.map(short))];
+  const actorText = pick.length ? pick.slice(0, 3).join("   ·   ") + (pick.length > 3 ? `   +${pick.length - 3}` : "") : "Tenant users & operators";
+  const bucketOf = (p: string) => {
+    const s = (p || "").toLowerCase();
+    if (/pulsar|topic|\bbus\b|cdc|atom|metricmetadata|ingest_status|publish|consume/.test(s)) return "Pulsar bus";
+    if (/aws|cloudwatch|cloudtrail|\bs3\b|\brole\b|account|\bsdk\b|\biam\b|eks|credential|foreign|\bsts\b/.test(s)) return "Customer AWS";
+    if (/session|orchestrat|instance|pty|shell|\bhost\b|terminal/.test(s)) return "Sessions & host";
+    return "Shared Postgres";
+  };
+  const bc = new Map<string, number>();
+  for (const ca of (model as any)?.controlActions ?? []) { const b = bucketOf(ca.process || ""); bc.set(b, (bc.get(b) || 0) + 1); }
+  const resources = [...bc.entries()].sort((a, b) => b[1] - a[1]).map((x) => x[0]);
+  const appX = 30, appW = W - 60, appPad = 14, chipH = 28, headH = 28;
+  const perRow = Math.max(1, Math.min(5, Math.floor((appW - appPad * 2) / 176)));
+  const rows = Math.max(1, Math.ceil(subsystems.length / perRow));
+  const appY = 92, appH = headH + rows * (chipH + 8) + appPad;
+  const resY = appY + appH + 64, resH = 46, aY = 18, aH = 44, aW = 400, aX = (W - aW) / 2;
+  const H = resY + resH + 34;
+  const box = (x: number, y: number, w: number, h: number, label: string, kind: "actor" | "res" | "danger") => {
+    const fill = kind === "danger" ? "var(--uca-bg)" : "var(--bg)";
+    const stroke = kind === "danger" ? "var(--uca)" : "var(--line)";
+    const tcol = kind === "danger" ? "var(--uca)" : "var(--ink)";
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9" fill="${fill}" stroke="${stroke}"/><text x="${x + w / 2}" y="${y + h / 2 + 4}" font-size="12" font-weight="600" text-anchor="middle" fill="${tcol}">${e2(label)}</text>`;
+  };
+  let s = `<svg class="sysdiagram" viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg">`;
+  s += `<defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--muted)"/></marker><marker id="ard" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--uca)"/></marker></defs>`;
+  s += box(aX, aY, aW, aH, actorText, "actor");
+  s += `<rect x="${appX}" y="${appY}" width="${appW}" height="${appH}" rx="12" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>`;
+  const appLabel = ((grid.system || "").split(/[—(@:]/)[0] || "").trim().toUpperCase().slice(0, 40) || "THE APPLICATION";
+  s += `<text x="${appX + 14}" y="${appY + 19}" font-size="11" font-weight="700" letter-spacing="0.06em" fill="var(--muted)">${e2(appLabel)} · ${subsystems.length} SUBSYSTEMS</text>`;
+  const chipW = (appW - appPad * 2 - (perRow - 1) * 10) / perRow;
+  subsystems.forEach((name, i) => {
+    const r = Math.floor(i / perRow), c = i % perRow;
+    const x = appX + appPad + c * (chipW + 10), y = appY + headH + r * (chipH + 8);
+    s += `<rect x="${x}" y="${y}" width="${chipW}" height="${chipH}" rx="7" fill="var(--panel)" stroke="var(--line)"/><text x="${x + chipW / 2}" y="${y + chipH / 2 + 4}" font-size="11" text-anchor="middle" fill="var(--ink)">${e2(name)}</text>`;
+  });
+  const n = resources.length || 1, rGap = 16, rW = (W - 60 - (n - 1) * rGap) / n;
+  resources.forEach((name, i) => {
+    const x = 30 + i * (rW + rGap), cx = x + rW / 2;
+    const danger = /Customer AWS|Pulsar/.test(name);
+    s += box(x, resY, rW, resH, name, danger ? "danger" : "res");
+    s += `<line x1="${cx - 8}" y1="${appY + appH}" x2="${cx - 8}" y2="${resY}" stroke="${danger ? "var(--uca)" : "var(--muted)"}" stroke-width="1.4" marker-end="url(#${danger ? "ard" : "ar"})"/>`;
+    s += `<line x1="${cx + 8}" y1="${resY}" x2="${cx + 8}" y2="${appY + appH}" stroke="var(--line)" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ar)"/>`;
+  });
+  s += `<line x1="${W / 2}" y1="${aY + aH}" x2="${W / 2}" y2="${appY}" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#ar)"/>`;
+  s += `</svg>`;
+  return `<div class="diagramwrap">${s}<p class="diagcap"><span class="dk"><b>→</b> control action</span> <span class="dk"><b>⇢</b> feedback (dashed — often absent; see §9)</span> <span class="dk dkr"><b>→</b> cross-account / bus edges (the crown-jewel paths)</span></p></div>`;
+})();
+const structDoc = read("02-control-structure.md");
+const structureHtml = `<section id="structure"><details class="fold" open><summary><span class="foldh">2 · How it's built — systems &amp; subsystems</span>${subsystems.length ? `<span class="gcount">${subsystems.map((s) => `<span class="gbadge">${esc(s)}</span>`).join("")}</span>` : ""}</summary><div class="foldbody">${systemDiagramSvg}${structDoc ? `<details class="fold subfold"><summary><span class="foldh sfh">Control-structure detail — controllers, control actions, process-model beliefs</span></summary><div class="foldbody doc">${md(dropTopHeading(structDoc))}</div></details>` : ""}</div></details></section>`;
+
+// §4 — the trust boundary and the assumptions, folded together
+const boundaryHtml = boundaryMd
+  ? section("boundary", "3 · Boundary & seams", assumptionsMd ? boundaryMd + "\n\n" + assumptionsMd : boundaryMd)
+  : "";
+
+// §0 — a plain-language primer + glossary, so every term is defined before it is
+// used. STPA is a decomposition chain; naming it up front is what makes the rest
+// readable to someone who is not a control theorist.
+const primerHtml = `<section id="primer"><details class="fold primer" open><summary><span class="foldh">Reading this report — STPA in 90 seconds</span></summary><div class="foldbody">
+  <p class="lede">This is an <strong>STPA</strong> analysis (System-Theoretic Process Analysis, and its security extension <strong>STPA-Sec</strong>). Instead of enumerating attacker techniques against each component — the approach of checklist methods like <strong>STRIDE</strong> — it models the system as <em>controllers</em> issuing <em>control actions</em> over <em>processes</em>, and asks where a legitimate action, in the wrong context, drives the system into a dangerous state. Its power is finding failures that <strong>emerge from the interaction of correctly-built components</strong> — broken authorization, tenant leaks, confused-deputy, bypass paths — the class attacker-checklists structurally miss. It complements STRIDE rather than replacing it.</p>
+  <p><strong>The analysis is a chain, each link narrowing the last:</strong></p>
+  <p class="chain"><span class="chip-l">Losses</span> <span class="arw">▸ caused by ▸</span> <span class="chip-l">Hazards</span> <span class="arw">▸ reached through ▸</span> <span class="chip-l">Unsafe control actions</span> <span class="arw">▸ which happen via ▸</span> <span class="chip-l">Loss scenarios</span> <span class="arw">▸ each inverted into ▸</span> <span class="chip-l">Constraints</span></p>
+  <p>So the three ways this report groups things are <em>one</em> picture from three angles: the <strong>four UCA types</strong> are the <em>mechanism</em> (the four ways any control can be unsafe) · the <strong>hazards</strong> are the dangerous <em>states</em> those mechanisms produce · the <strong>root causes</strong> (in <a href="#focus">Where to focus</a>) are the shared <em>fixes</em> — the few changes that close many findings at once.</p>
+  <dl class="glossary">
+    <dt>Loss</dt><dd>an outcome stakeholders find unacceptable — data exposed, money lost, trust broken.</dd>
+    <dt>Hazard</dt><dd>a system <em>state</em> that, in a worst-case environment, leads to a loss. A state, never an attacker action.</dd>
+    <dt>Controller</dt><dd>anything that exercises authority: a service, a human operator, a pipeline, a third party.</dd>
+    <dt>Control action</dt><dd>an authority-bearing action a controller takes — grant access, run a command, assume a role, write data.</dd>
+    <dt>Process model</dt><dd>what a controller <em>believes</em> about the system. Most authorization bugs are a controller acting on a stale or wrong belief.</dd>
+    <dt>Unsafe control action (UCA)</dt><dd>a control action that is unsafe in a specific context. Exactly four types: <em>not provided</em> (a needed control never happens) · <em>provided</em> (an action taken where it causes harm) · <em>wrong timing/order</em> · <em>too long / stopped too soon</em>.</dd>
+    <dt>Loss scenario</dt><dd>why a UCA occurs — or why a <em>correct</em> control fails to land because something bypasses it (the highest-value class).</dd>
+    <dt>Constraint</dt><dd>a MUST-NOT rule that <em>prevents</em> the hazard where prevention is possible, or <em>bounds</em> it — shrinks the blast radius, forces attribution — where it isn't. Each carries a runnable check.</dd>
+    <dt>Trust zone / blast radius</dt><dd>where a component sits (a per-customer deployment, the central plane, a cloud account) and how far a failure reaches (one tenant vs all). Together they set severity.</dd>
+    <dt>Band (1–4)</dt><dd>this analysis's priority order = severity × reachability. Not a probability, not a CVSS score.</dd>
+    <dt>IDOR</dt><dd>Insecure Direct Object Reference — using a caller-supplied id to read or act on a resource without checking the caller owns it.</dd>
+    <dt>Confused deputy</dt><dd>tricking a privileged component into using its authority on the attacker's behalf.</dd>
+    <dt>TOCTOU</dt><dd>time-of-check to time-of-use — a check and the action it guards race, so the state changes in between.</dd>
+    <dt>Prompt injection</dt><dd>attacker-controlled text that reaches an LLM agent and steers its tool calls or output.</dd>
+  </dl>
+</div></details></section>`;
+
+// §0b — objective self-assessment: computed by the peer-review gate, never narrated.
+const scorecardRaw = read("review-scorecard.json");
+const scorecard = scorecardRaw ? (JSON.parse(scorecardRaw) as any) : null;
+const trustPanelHtml = (() => {
+  if (!scorecard) {
+    return `<div id="trust" class="notreviewed">⚠ <strong>NOT INDEPENDENTLY REVIEWED.</strong> This analysis has not passed an adversarial peer review by a second model — treat every finding and every band as a <em>draft</em>, not a verdict. Run <code>stpa verify</code> after the review pass.</div>`;
+  }
+  const ok = scorecard.passed && scorecard.independentReview;
+  return `<section id="trust" class="block trust${ok ? "" : " warn"}"><h2>How much to trust this analysis</h2>
+  <p class="lede">${ok ? "Every finding was attacked by an <strong>independent second model</strong> before you saw it" : "Peer review is <strong>incomplete</strong> — read this section before trusting the bands"}. The verdicts below are the reviewer's, not the author's.</p>
+  <div class="trustgrid">
+    <div class="tstat"><div class="v">${scorecard.reviewedPct}%</div><div class="k">findings peer-reviewed</div></div>
+    <div class="tstat"><div class="v">${scorecard.independentReview ? "✓" : "✗"}</div><div class="k">independent model<div class="muted">${esc(scorecard.authorModel || "?")} → ${esc(scorecard.reviewerModel || "?")}</div></div></div>
+    <div class="tstat"><div class="v">${scorecard.reachabilityPathPct}%</div><div class="k">live findings that name a deployed reachability path</div></div>
+    <div class="tstat"><div class="v">${scorecard.trustZonesModeled ? "✓" : "✗"}</div><div class="k">deployment trust zones modeled</div></div>
+  </div>
+  <p class="foldhint"><strong>${scorecard.confirmed}</strong> confirmed · <strong>${scorecard.downgraded}</strong> downgraded on review · <strong>${scorecard.provisional}</strong> provisional (assumption-dependent) · <strong>${scorecard.refuted}</strong> refuted. A downgrade or refutation means the first-pass rating was corrected before it reached you.</p>
+  </section>`;
+})();
+
+// §6 — where to focus: 187 findings → a short list of highest-leverage fixes.
+// Full remediation (locations, probes, waves) stays at the end in the plan.
+const focusHtml = (() => {
+  if (!plan || !(plan.clusters ?? []).length) return "";
+  const cl = [...(plan.clusters as any[])].sort((a, b) => (b.leverage ?? 0) - (a.leverage ?? 0));
+  const total = plan.metrics.findings || findings.length;
+  const K = Math.min(4, cl.length);
+  const topSum = cl.slice(0, K).reduce((a, c) => a + (c.leverage ?? 0), 0);
+  const pct = total ? Math.round((topSum / total) * 100) : 0;
+  const b1 = plan.metrics.bands?.band1 ?? 0;
+  const cards = cl
+    .slice(0, K)
+    .map(
+      (c, i) => `<div class="fcard">
+      <div class="frank">${i + 1}</div>
+      <div class="fbody">
+        <div class="fmeta"><span class="fclose">${c.leverage}</span> findings <span class="muted">·</span> <span class="band band-${c.bestBand}">band ${c.bestBand}</span> <span class="muted">·</span> <span class="eff eff-${c.effort}">${esc(c.effort)}</span> <span class="effw">${EFFORT_LABEL[c.effort] ?? ""}</span></div>
+        <div class="fname">${c.id ? `<span class="lid">${esc(c.id)}</span> ` : ""}${esc(c.summary ?? c.name)}</div>
+        ${c.fix ? `<div class="ffix"><strong>Do:</strong> ${esc(c.fix)}</div>` : ""}
+      </div>
+    </div>`,
+    )
+    .join("");
+  return `<section id="focus"><details class="fold focus" open><summary><span class="foldh">5 · Where to focus</span></summary><div class="foldbody">
+
+  <p class="lede">${total} findings is a lot — but they collapse to ${plan.metrics.rootCauses || cl.length} root causes, and a handful close most of them. <strong>The top ${K} account for ${topSum} of ${total} findings (${pct}%).</strong> ${b1 ? `${b1} findings are band-1 — ship-blockers.` : ""} Fix these first; the rest is downstream.</p>
+  <div class="focuscards">${cards}</div>
+  <p class="foldhint">Full remediation — every finding with its <code>file:line</code> and a runnable probe, sequenced into waves — is in <a href="#plan">the engineering plan</a> at the end.</p>
+</div></details></section>`;
+})();
 
 const typeCounts = Object.keys(UCA_TYPE_LABEL).map((k) => {
   const items = findings.filter((c) => c.ucaType === k);
@@ -566,7 +854,8 @@ h1{font-size:29px;line-height:1.25;margin:8px 0 6px;letter-spacing:-.02em}
 .bar .blabel{line-height:1.3}
 .bar .bname{font-weight:600;font-size:13px}
 .bar .bhint{font-size:11px;color:var(--muted);margin-top:2px}
-.bar .track{height:10px;background:var(--tomb-bg);border-radius:99px;overflow:hidden;display:flex}
+.bar .track{height:11px;display:flex;align-items:center}
+.bar .fill{height:100%;display:flex;border-radius:99px;overflow:hidden;min-width:4px}
 .bar .seg{height:100%}
 .bar .n{text-align:center;color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
 .sb-1{background:var(--uca)} .sb-2{background:var(--open)}
@@ -712,6 +1001,70 @@ footer p{margin:0;max-width:74ch}
   section.doc,section.block,section.ca,.stat,.bars{break-inside:avoid;box-shadow:none}
   nav.toc{display:none}
 }
+/* ── progressive disclosure (native <details>, no JS) ── */
+details.fold,details.planegroup{background:var(--panel);border:1px solid var(--line);border-radius:13px;margin:16px 0;overflow:hidden}
+details.fold>summary,details.planegroup>summary{cursor:pointer;list-style:none;padding:17px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;user-select:none}
+details.fold>summary::-webkit-details-marker,details.planegroup>summary::-webkit-details-marker{display:none}
+details.fold>summary::before,details.planegroup>summary::before{content:"\25B8";color:var(--muted);font-size:13px;transition:transform .12s ease;flex:none}
+details[open]>summary::before{transform:rotate(90deg)}
+details.fold>summary:hover .foldh,details.planegroup>summary:hover .foldh{color:var(--accent)}
+.foldh{font-size:16px;font-weight:650}
+.foldbody{padding:2px 24px 20px}
+.foldbody.doc>*:first-child{margin-top:0}
+.pgbody{padding:2px 16px 14px}
+.pgbody section.ca{margin:12px 0}
+.gcount{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.gbadge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.gbadge.f{background:var(--uca-bg);color:var(--uca);border-color:var(--uca)}
+.gbadge.t{background:var(--tomb-bg);color:var(--tomb)}
+.gbadge.b1{background:var(--uca);color:#fff;border-color:var(--uca)}
+.foldhint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+/* what's at stake — the human layer */
+.stake{border-left:3px solid var(--accent)}
+.stake>.lede{font-size:14.5px}
+ul.stakelist{list-style:none;margin:8px 0 6px;padding:0;display:grid;gap:7px}
+ul.stakelist li{padding:10px 14px;background:var(--bg);border:1px solid var(--line);border-radius:9px;font-size:13.5px;line-height:1.55}
+.lid,.hid{display:inline-block;font-weight:750;font-size:11.5px;color:var(--accent);background:var(--uca-bg);border:1px solid var(--uca);border-radius:6px;padding:1px 7px;margin-right:5px}
+.hz .hid{margin:0}
+table.hz th:nth-child(3),table.hz td:nth-child(3),table.hz th:nth-child(4),table.hz td:nth-child(4){text-align:center;white-space:nowrap;width:1%}
+.hcount{display:inline-block;font-weight:750;min-width:24px;padding:1px 9px;border-radius:20px;background:var(--uca-bg);color:var(--uca);border:1px solid var(--uca)}
+/* where to focus — the prioritization view */
+.focus{border-left:3px solid var(--uca)}
+.focuscards{display:grid;gap:10px;margin:10px 0 4px}
+.fcard{display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start;padding:14px 16px;background:var(--bg);border:1px solid var(--line);border-radius:11px}
+.frank{font-weight:750;font-size:19px;color:var(--uca);text-align:center;line-height:1.15}
+.fmeta{font-size:12px;color:var(--muted);margin-bottom:3px}
+.fclose{font-weight:750;color:var(--uca);font-size:14px}
+.fname{font-weight:650;font-size:14px;line-height:1.4;margin-bottom:4px}
+.ffix{font-size:13px;line-height:1.5}
+/* generated system diagram */
+.diagramwrap{margin:4px 0 6px}
+.sysdiagram{display:block;max-width:820px;margin:0 auto}
+.diagcap{font-size:11.5px;color:var(--muted);text-align:center;margin:8px 0 0;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.diagcap .dk b{color:var(--muted)}
+.diagcap .dkr b{color:var(--uca)}
+.subfold{margin-top:16px}
+.subfold>summary{padding:12px 16px}
+.sfh{font-size:13px!important;color:var(--muted)}
+/* trust / peer-review scorecard */
+.notreviewed{background:var(--uca-bg);border:1px solid var(--uca);color:var(--uca);border-radius:11px;padding:14px 18px;margin:16px 0;font-size:13.5px}
+.trust{border-left:3px solid var(--ok,#16a34a)}
+.trust.warn{border-left-color:var(--uca)}
+.trustgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 4px}
+.tstat{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tstat .v{font-size:22px;font-weight:750;line-height:1.1}
+.tstat .k{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+.tstat .k .muted{font-size:10.5px}
+/* STPA primer + glossary */
+.primer{border-left:3px solid var(--accent)}
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 12px}
+.chip-l{font-weight:650;font-size:12.5px;padding:3px 10px;border-radius:7px;background:var(--bg);border:1px solid var(--line)}
+.chain .arw{font-size:11px;color:var(--muted)}
+dl.glossary{display:grid;grid-template-columns:180px 1fr;gap:6px 16px;margin:14px 0 2px;font-size:13px;border-top:1px solid var(--line);padding-top:14px}
+dl.glossary dt{font-weight:700;color:var(--ink)}
+dl.glossary dd{margin:0;color:var(--ink);line-height:1.5}
+@media(max-width:640px){dl.glossary{grid-template-columns:1fr;gap:2px 0}dl.glossary dd{margin-bottom:8px;color:var(--muted)}}
+@media print{details.fold,details.planegroup{break-inside:avoid}details>*{display:block!important}details>summary::before{display:none}}
 </style></head><body><div class="wrap">
 
 <header class="top">
@@ -808,13 +1161,13 @@ ${
     .map(
       (t) => `<div class="bar">
         <div class="blabel"><div class="bname">${esc(t.label)}</div><div class="bhint">${esc(t.hint)}</div></div>
-        <div class="track">${
+        <div class="track"><div class="fill" style="width:${(t.n / maxType) * 100}%">${
           anyBanded
             ? t.byBand
-                .map((n, i) => (n ? `<div class="seg sb-${i + 1}" style="width:${(n / maxType) * 100}%" title="${n} in band ${i + 1}"></div>` : ""))
-                .join("") + (t.unbanded ? `<div class="seg sb-x" style="width:${(t.unbanded / maxType) * 100}%" title="${t.unbanded} not yet planned"></div>` : "")
-            : `<div class="seg sb-x" style="width:${(t.n / maxType) * 100}%"></div>`
-        }</div>
+                .map((n, i) => (n ? `<div class="seg sb-${i + 1}" style="width:${t.n ? (n / t.n) * 100 : 0}%" title="${n} in band ${i + 1}"></div>` : ""))
+                .join("") + (t.unbanded ? `<div class="seg sb-x" style="width:${t.n ? (t.unbanded / t.n) * 100 : 0}%" title="${t.unbanded} not yet planned"></div>` : "")
+            : `<div class="seg sb-x" style="width:100%"></div>`
+        }</div></div>
         <div class="n">${t.n}</div>
       </div>`,
     )
@@ -828,38 +1181,58 @@ ${
   </div>
 
   <nav class="toc">
-    ${plan ? '<a href="#plan" class="primary">▸ Engineering plan</a>' : ""}
-    <a href="#scope">Scope &amp; hazards</a>
-    <a href="#structure">Control structure</a>
+    <a href="#primer">Reading this report</a>
+    ${overviewHtml ? `<a href="#overview" class="primary">▸ What this system is</a>` : ""}
+    <a href="#structure">How it's built</a>
+    ${boundaryHtml ? '<a href="#boundary">Boundary &amp; seams</a>' : ""}
+    ${atStakeHtml ? `<a href="#stake">What's at stake</a>` : ""}
+    ${focusHtml ? `<a href="#focus" class="primary">▸ Where to focus</a>` : ""}
+    <a href="#scenarios">How it goes wrong</a>
+    <a href="#constraints">What stops it</a>
+    <a href="#grid">Full grid</a>
     <a href="#pm">Process models</a>
-    <a href="#grid">UCA grid</a>
-    <a href="#scenarios">Loss scenarios</a>
-    <a href="#constraints">Constraints</a>
+    ${plan ? '<a href="#plan">Engineering plan</a>' : ""}
   </nav>
 </header>
 
-${planHtml}
+<!-- Narrative arc: what it is → how it's built → the seams → what's at stake →
+     the unsafe actions → scenarios → constraints → what to do (plan, last). -->
+<!-- Narrative arc: primer/glossary → what it is → how it's built (diagram) → the
+     seams → what's at stake → where to focus → findings & analysis → plan (last). -->
+${primerHtml}
 
-${section("scope", "1 · Scope, losses and hazards", read("01-scope.md"))}
-${section("structure", "2 · Control structure", read("02-control-structure.md"))}
+${trustPanelHtml}
 
-${
-  pmRows || fbRows
-    ? `<section id="pm" class="block"><h2>Process models &amp; feedback</h2>
-  <p>What each controller <em>believes</em>, where the belief comes from, and how stale it can be. Process-model inconsistency is the general form of the authorization bug — this table is where most findings originate.</p>
-  ${pmRows ? `<div class="tablewrap"><table><thead><tr><th>ID</th><th>Controller</th><th>Believes</th><th>Sourced from</th><th>Staleness</th></tr></thead><tbody>${pmRows}</tbody></table></div>` : ""}
-  ${fbRows ? `<h3>Feedback channels</h3><div class="tablewrap"><table><thead><tr><th>ID</th><th>Path</th><th>Signal</th></tr></thead><tbody>${fbRows}</tbody></table></div>` : ""}
-  </section>`
-    : ""
-}
+${overviewHtml}
 
-<section id="grid" class="block"><h2>3 · Unsafe control actions</h2>
-<p>Every control action considered against all four UCA types — <strong>${grid.totalCells}</strong> cells. A cell resolves as a finding bound to a declared control-structure element, or as a tombstone with a written reason. Both are results; an open cell is not.</p>
+${structureHtml}
+
+${boundaryHtml}
+
+${atStakeHtml}
+
+${focusHtml}
+
+${section("scenarios", "6 · How it goes wrong — loss scenarios", read("04-scenarios.md"), true)}
+${section("constraints", "7 · What must hold to stop it — security constraints", read("05-constraints.md"))}
+
+<section id="grid" class="block"><h2>8 · Unsafe control actions — the full enumeration</h2>
+<p>The exhaustive backing for the scenarios above: every control action considered against all four UCA types — <strong>${grid.totalCells}</strong> cells. A cell resolves as a finding bound to a declared control-structure element, or as a tombstone with a written reason. Both are results; an open cell is not.</p>
+${singlePlane ? "" : `<p class="foldhint">Grouped by plane below and collapsed to the counts — click a plane to open its control actions.</p>`}
 </section>
 ${findingCards}
 
-${section("scenarios", "4 · Loss scenarios", read("04-scenarios.md"))}
-${section("constraints", "5 · Security constraints", read("05-constraints.md"))}
+${
+  pmRows || fbRows
+    ? `<section id="pm"><details class="fold"><summary><span class="foldh">9 · What each part believes — process models &amp; feedback</span></summary><div class="foldbody">
+  <p>The detailed belief table: what each controller <em>believes</em>, where the belief comes from, and how stale it can be. Process-model inconsistency is the general form of the authorization bug — this is the reference behind the findings above.</p>
+  ${pmRows ? `<div class="tablewrap"><table><thead><tr><th>ID</th><th>Controller</th><th>Believes</th><th>Sourced from</th><th>Staleness</th></tr></thead><tbody>${pmRows}</tbody></table></div>` : ""}
+  ${fbRows ? `<h3>Feedback channels</h3><div class="tablewrap"><table><thead><tr><th>ID</th><th>Path</th><th>Signal</th></tr></thead><tbody>${fbRows}</tbody></table></div>` : ""}
+  </div></details></section>`
+    : ""
+}
+
+${planHtml}
 
 <footer>
 <p>Generated by <strong>stpa</strong> · method: STPA (Leveson &amp; Thomas, <em>STPA Handbook</em>, 2018) with the STPA-Sec security framing (Young &amp; Leveson, <em>CACM</em> 57(2), 2014).

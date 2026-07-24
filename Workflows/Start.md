@@ -39,6 +39,8 @@ exactly as designed.
 Four questions, then the repo link, then I run the whole thing.
 ```
 
+**This intake is a short facilitated conversation, not a form.** STPA's power is the system owner's knowledge — deployment topology, what would actually hurt, what is really deployed — which a scan cannot see; facilitated threat-modeling sessions catch the design-level threats automated scans miss ([UK Gov Secure-by-Design](https://www.security.gov.uk/policy-and-guidance/secure-by-design/activities/performing-threat-modelling/); Fowler, *Agile Threat Modelling*). Three rules follow: **(a)** ask the minimum to start and draw the rest out as you go — do not interrogate; **(b)** always offer a **"proceed with sensible defaults"** escape for a user who just wants a result (infer scope/depth, note what you assumed, run); **(c)** for a user new to this, **prefer a focused, timeboxed first pass over full-surface** — frequency over scale beats one exhaustive run. Full-surface is the right call for a deliberate audit, not a first look.
+
 ### 2. Round one — four questions, one `AskUserQuestion` call
 
 **The exact four. Do not re-derive them.**
@@ -78,6 +80,8 @@ If the link has no ref, ask which branch — one line, not a question round. Nev
 |---|---|---|
 | A design document | file path **or** URL | Fetch or read it before proceeding. Say which you got. |
 
+**If a design document is in the inputs, offer the STRIDE pre-pass — one line, right here.** A design doc is exactly what STRIDE-per-element wants, and its trust-boundary / data-flow / asset output *seeds* the STPA control structure (the trust-boundary layer is the one whose absence most often mis-rates findings). Ask plainly: *"Want me to run a STRIDE pass first and feed it in? — recommended when a design doc exists; it seeds the trust zones and cross-checks coverage."* If yes, run `SeedWithStride.md` before Step 2. If code-only (no design doc), skip it or offer to run it against a short architecture summary you extract.
+
 For a git URL: look for a local checkout first, otherwise clone shallow. **Never switch their checked-out branch — use a worktree.**
 
 ### 3b. Record what you actually consulted
@@ -114,6 +118,18 @@ Their Q2 answer is a **contract**, not a preference. Write it into `model.json` 
 - Every candidate control action must be modeled. Unmodeled ≠ deferred.
 - **"not read" is not a deferral reason.** A valid deferral says why the thing does not need analysing — exercises no authority, outside the declared boundary, static content with no tenant dimension. "Nobody got to it" means outstanding, not deferred.
 - **Narrowing scope is the requester's decision, not yours.** If it is taking longer than expected, say so and ask — do not quietly deliver less and write the shortfall up as a boundary.
+
+### 3e. Ask the deployment & trust context — one round, and it is not optional
+
+**This is the round that was missing, and its absence produced a real mislocated finding.** Reachability and blast radius — which set every finding's severity — are properties of the *deployment*, not the code, and only the owner reliably knows them. Asking costs one round; not asking means the analysis rates internal, one-tenant, foothold-required paths as if they were external, cross-tenant, zero-foothold ones (and misses the central plane where cross-tenant risk actually lives). Fire one `AskUserQuestion`:
+
+| # | Header | Question | multiSelect |
+|---|---|---|---|
+| 1 | `Tenancy` | How is it deployed? — *single-tenant per customer (each in their own environment)* / *multi-tenant shared* / *per-customer + a central control plane* / *not sure* | no |
+| 2 | `Who reaches what` | Which surfaces are internet-facing vs internal-only, and who can authenticate — customers, staff, both? | **yes** |
+| 3 | `Non-code controls` | What enforces boundaries *outside the code* — IAM, network isolation/private subnets, a WAF, broker ACLs? | **yes** |
+
+Always include the honest escape: **"not sure — infer from the infra and mark the dependent findings provisional."** If they pick that, gather what you can from terraform/IaC, network config and IAM yourself, and tag every band that rides on an unconfirmed fact as provisional (see the reachability gotcha). Record the answers into `model.json` `scope.trustZones` and the assumptions log — they gate the bands.
 
 ### 4. State what you need from them, then start
 

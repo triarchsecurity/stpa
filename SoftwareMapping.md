@@ -24,6 +24,7 @@ A controller is anything that makes a decision affecting system state. The mista
 | **Feature-flag service** | which code path is live, changeable without a deploy |
 | **Human operator / support agent** | manual overrides, impersonation, escalation, refunds |
 | **On-call engineer with production access** | direct state change bypassing every application control |
+| **Shipped operator/debug tooling (web shell, CLI console, admin terminal, debug page) inside a deployed or customer-side artifact** | grants a human ambient access to everything the deployment's *own* identity can reach — frequently the widest authority in the system, and it leaves only a thin code trace (a PTY spawn, a metadata fetch) that no scanner flags as authority-bearing |
 | **Third-party service acting on your data** | processing you authorized but do not observe |
 | **Package registry / dependency resolver** | what code your build trusts |
 | **The scheduler (cron, workflow engine)** | what runs unattended, usually with elevated authority |
@@ -40,13 +41,14 @@ A controller is anything that makes a decision affecting system state. The mista
 | **Cache layer** | a controlled process that is *also* a process-model source — dangerous combination |
 | **Deployed runtime / cluster** | the process the pipeline controls |
 | **External service state (payments, email, IAM)** | changes here are usually irreversible |
+| **The workload's own ambient credentials** | cloud instance/task-role credentials, env secrets, and any reachable credential/metadata endpoint (e.g. the link-local metadata IP) — a controlled process because anything in the runtime can read it, and *portable*: a token lifted here is usable from anywhere, under the workload's identity, until it expires |
 | **Another team's service** | your control action, their controlled process, no shared model |
 
 ### Control action — the decision, not the endpoint
 
 Model the *action*, not the route. `POST /orders`, `POST /orders/bulk`, and the order-import worker are one control action issued through three paths.
 
-Typical software control actions: authenticate a system owner · issue a credential or session · grant or deny access to a resource · assign or revoke a role · create, modify, or delete a record · move money · send a message to a user · publish an event · execute a job · deploy or roll back · change a feature flag · rotate or revoke a secret · export data · impersonate a user · escalate privilege · quarantine or ban an account.
+Typical software control actions: authenticate a system owner · issue a credential or session · grant or deny access to a resource · assign or revoke a role · create, modify, or delete a record · move money · send a message to a user · publish an event · execute a job · deploy or roll back · change a feature flag · rotate or revoke a secret · export data · impersonate a user · escalate privilege · quarantine or ban an account · read the instance/task credential or metadata endpoint · extract or export ambient credentials · act on a downstream account off the application path.
 
 ### Feedback — how the controller learns the result
 
@@ -76,6 +78,8 @@ The highest-yield element in software STPA. For every controller record three th
 | "this request is internal" | network position, header, absent | permanently wrong under SSRF |
 | idempotency state | key store | window length |
 | account status (banned, locked) | DB, cached | cache TTL |
+| my authority is confined to this process/host | ambient credentials in the runtime env | FALSE by construction — cloud STS/instance/task tokens are portable and usable off-box until TTL |
+| a privileged action is attributable to a named human | a shared service/role identity, a generic session name | FALSE — off-box use surfaces the *operator's own* network identity, and a shared identity names no one |
 
 ---
 
@@ -89,6 +93,7 @@ This is the central claim of the software mapping, and it is what makes STPA wor
 |---------------------|-------------------|
 | **IDOR / broken object-level authz** | the controller believes the requested object belongs to the caller, because the caller said which object — it never checked ownership |
 | **Broken tenant isolation** | the controller believes tenant identity is a fact, sourced from a value the caller controls |
+| **Credential / authority exfiltration (off-path use)** | the controller — and everyone with shell/console access to its runtime — believes authority is bounded by the application path, but the runtime's ambient credentials are portable; lifted and used off-box they carry the full authority of the workload's identity, non-attributably, and the guarded path is never involved |
 | **Mass assignment** | the controller believes the request body contains only fields the caller may set |
 | **Stale-permission window** | the controller believes the role held at token issue is the role now |
 | **Confused deputy / SSRF** | the controller believes the request originated internally, because it arrived from an internal address |

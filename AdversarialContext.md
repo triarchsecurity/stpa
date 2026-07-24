@@ -40,6 +40,16 @@ For each UCA context, rate how an adversary gets there. This replaces likelihood
 
 **R0 and R1 are the ones people underrate.** They require no compromise at all: the adversary simply exercises the system as designed, in a context its designers did not consider. That is where most real breaches live.
 
+### Reachability is a property of the DEPLOYMENT, not the code — this is where ratings quietly go wrong
+
+The R0–R4 band is meaningful only against the *deployed* system. The **same missing check** gets a completely different band depending on facts the code does not contain:
+
+- **Where does the entry point live?** An unauthenticated route on an internet-facing service is R0; the identical route on an internal, private-network service is R3 (a foothold is needed first). A zero-auth message bus is R0 if the broker is externally reachable, R3 if it runs on a per-deployment private network.
+- **What is the tenancy topology?** "No tenant scope" is a *live cross-tenant read* in a shared multi-tenant store, but merely *latent design-debt* in a single-tenant-per-customer deployment — there is no second tenant to leak to. In that case the live cross-tenant surface is wherever tenants are actually pooled: a central archive, a shared bucket, a shared identity, the deploy pipeline. That is a distinct **trust zone** and must be modeled as its own slice, or the real cross-tenant finding is missed while the latent one is over-rated.
+- **Which non-code controls are in force?** IAM on a bucket, a network segment, a broker ACL, a WAF — these are controllers. One can *close* a finding (tombstone it, naming the control) or be *assumed but unverified* (rate it provisional).
+
+Two disciplines follow. **(1) Locate every finding in a trust zone and state its blast radius** — one tenant / all tenants / one deployment / the fleet / one cloud account / all accounts. Topology decides both, and blast radius is what separates a P0 from a P3. **(2) When a band depends on an environment fact you have not confirmed, mark it provisional and tag the assumption** — a provisional band must never be ranked as if it were confirmed. The failure this prevents: rating internal, foothold-required, within-one-tenant paths as external, zero-foothold, cross-tenant ones, while the genuinely cross-tenant central plane goes unmodeled. Deployment topology lives in terraform/IaC, network config and IAM — never in the application code — so it is a mandatory hand-gathered input, read *before* bands are assigned.
+
 ---
 
 ## Generic adversary-reachable context patterns
@@ -58,6 +68,7 @@ Run these against every grid cell before concluding "no hazard". They are the qu
 10. **An external party asserted it.** Webhooks, callbacks, OAuth responses, federated identity claims, third-party data. R0 if unauthenticated.
 11. **A default applied.** Any path where a value was absent and a default was used: unset flag, missing config, new tenant, empty list treated as "allow all". R0–R1.
 12. **The clock matters.** Expiry comparisons, skew tolerance, scheduled windows, retention boundaries, TOTP drift. R1–R2.
+13. **The runtime carries credentials.** Any controller whose process environment holds ambient cloud/instance/task credentials, secrets, or a reachable credential/metadata endpoint — those tokens are *portable*: anything running in that runtime (a shipped shell, a debug console, an injected process) can lift them and use them off the application path, under the workload's identity, on everything that identity can reach. R3 when it needs shell/console access; R1 if that console is broadly reachable. The application's authorization model never sees the use, and downstream logs show the operator's own network identity — or a shared service identity — not the system.
 
 ---
 
@@ -103,6 +114,7 @@ Step 4's causal categories, read as attack surfaces.
 - Backups, exports, replicas, and search indexes with weaker controls than the primary
 - A support impersonation tool with no equivalent of the user-facing constraints
 - A cron job running as root because it was easier
+- A shipped shell/console (web terminal, CLI simulator, debug page) whose environment carries the workload's own credentials — an operator lifts *portable* credentials and acts on the downstream account directly from off-box, under a shared workload identity; the guarded application path is never involved, and the only trace is the operator's own network identity in the downstream logs, not the system's. (This is a real incident pattern, not a hypothetical: it is how "I was just troubleshooting" becomes an unattributable change in a customer's account.)
 
 ---
 
