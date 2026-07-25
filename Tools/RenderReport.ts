@@ -294,6 +294,29 @@ const SECTIONS: { file: string; label: string; why: string; weight: "core" | "su
   { file: "05-constraints.md", label: "Security constraints", why: "the MUST-NOT assertions and probes that make findings testable", weight: "core" },
   { file: "06-remediation.json", label: "Engineering plan", why: "severity, effort, file locations, root causes and waves — run `stpa plan`", weight: "core" },
 ];
+// STRIDE is core ONLY when the intake selected it. Grading it core unconditionally
+// would fail every STPA-only run; leaving it merely supporting is how a selected
+// method went undelivered while every gate passed green. The method contract in
+// model.json decides, which is the same principle as scope.requested deciding
+// whether an unmodeled control action is a deferral or a shortfall.
+const methodsField: unknown = (() => {
+  const r = read("model.json");
+  if (!r) return null;
+  try {
+    return JSON.parse(r)?.scope?.methods ?? null;
+  } catch {
+    return null;
+  }
+})();
+const methodsText = Array.isArray(methodsField) ? methodsField.join(" ") : typeof methodsField === "string" ? methodsField : "";
+if (/stride/i.test(methodsText))
+  SECTIONS.push({
+    file: "00-stride-seed.md",
+    label: "STRIDE cross-check",
+    why: "STRIDE was selected at intake. Without the seed there is no per-element sweep and no two-way coverage reconciliation — run `Workflows/SeedWithStride.md`, then `stpa stride`",
+    weight: "core",
+  });
+
 const missingSections = SECTIONS.filter((x) => !read(x.file));
 
 
@@ -1217,6 +1240,7 @@ ${focusHtml}
 ${section("scenarios", "6 · How it goes wrong — loss scenarios", read("04-scenarios.md"), true)}
 ${section("chains", "6b · How findings chain — composed reachability", read("07-chains.md"), true)}
 ${section("constraints", "7 · What must hold to stop it — security constraints", read("05-constraints.md"))}
+${section("stride", "7b · STRIDE cross-check — coverage in both directions", read("00-stride-seed.md"), true)}
 
 <section id="grid" class="block"><h2>8 · Unsafe control actions — the full enumeration</h2>
 <p>The exhaustive backing for the scenarios above: every control action considered against all four UCA types — <strong>${grid.totalCells}</strong> cells. A cell resolves as a finding bound to a declared control-structure element, or as a tombstone with a written reason. Both are results; an open cell is not.</p>

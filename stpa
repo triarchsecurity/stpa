@@ -13,6 +13,7 @@
  *   stpa discover <repo> [dir]    prove the inventory was multi-modal (gate, BEFORE init)
  *   stpa compose [dir]            chain findings; re-rate reachability (gate)
  *   stpa scope [dir]              hold the analysis to the scope requested (gate)
+ *   stpa stride [dir]             hold the analysis to the methods requested (gate)
  *   stpa run [dir]                plan + report in one go
  *   stpa new [dir]                scaffold a blank analysis directory
  *
@@ -43,6 +44,7 @@ const USAGE = `stpa — control-theoretic threat modeling (STPA) for codebases a
   stpa discover <repo> [dir]         prove the inventory was multi-modal (gate, BEFORE init)
   stpa compose [dir] [--check]       chain findings; re-rate reachability (gate)
   stpa scope   [dir] [--inventory N] hold the analysis to the scope requested (gate)
+  stpa stride  [dir] [--warn-only]   hold the analysis to the methods requested (gate)
   stpa run     [dir]                 plan + report in one go
 
 Typical first run:
@@ -170,6 +172,8 @@ switch (cmd) {
     process.exit(run("ComposeChains.ts", rest));
   case "scope":
     process.exit(run("ScopeGate.ts", rest));
+  case "stride":
+    process.exit(run("StrideGate.ts", rest));
   case "plan":
     process.exit(run("Prioritize.ts", rest));
   case "report":
@@ -188,6 +192,18 @@ switch (cmd) {
     if (sc !== 0) {
       console.error(`\n!! SCOPE CONTRACT NOT HONOURED (exit ${sc}). Continuing so you can see the`);
       console.error(`   findings, but this command will exit non-zero and the report will say so.\n`);
+    }
+    // Method contract, alongside the scope contract and for the same reason. The
+    // intake records which methods were chosen; until StrideGate existed nothing
+    // read that field, so a run could record "STPA + STRIDE", deliver STPA only,
+    // and pass every gate green. That happened, and the requester caught it by
+    // reading the report — which is the one place a method gap should never be
+    // discovered first.
+    const st = run("StrideGate.ts", [dir]);
+    if (st !== 0) {
+      console.error(`\n!! METHOD CONTRACT NOT HONOURED (exit ${st}). A method was selected at intake and`);
+      console.error(`   not delivered, or delivered without its two-way reconciliation. Continuing so`);
+      console.error(`   you can see the findings, but this command will exit non-zero.\n`);
     }
     const a = run("Prioritize.ts", [dir]);
     if (a !== 0) {
@@ -219,7 +235,7 @@ switch (cmd) {
     // warns that .stpa is hidden from Finder, and — when the run is sandboxed — says so
     // instead of printing a host path it cannot actually know.
     if (r === 0) run("ReportLink.ts", [dir]);
-    process.exit(r !== 0 ? r : sc !== 0 ? sc : v !== 0 ? v : cp !== 0 ? cp : a);
+    process.exit(r !== 0 ? r : sc !== 0 ? sc : st !== 0 ? st : v !== 0 ? v : cp !== 0 ? cp : a);
   }
   default:
     console.error(`unknown command: ${cmd}\n\n${USAGE}`);
