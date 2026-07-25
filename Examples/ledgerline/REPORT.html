@@ -75,7 +75,8 @@ h1{font-size:29px;line-height:1.25;margin:8px 0 6px;letter-spacing:-.02em}
 .bar .blabel{line-height:1.3}
 .bar .bname{font-weight:600;font-size:13px}
 .bar .bhint{font-size:11px;color:var(--muted);margin-top:2px}
-.bar .track{height:10px;background:var(--tomb-bg);border-radius:99px;overflow:hidden;display:flex}
+.bar .track{height:11px;display:flex;align-items:center}
+.bar .fill{height:100%;display:flex;border-radius:99px;overflow:hidden;min-width:4px}
 .bar .seg{height:100%}
 .bar .n{text-align:center;color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
 .sb-1{background:var(--uca)} .sb-2{background:var(--open)}
@@ -221,6 +222,70 @@ footer p{margin:0;max-width:74ch}
   section.doc,section.block,section.ca,.stat,.bars{break-inside:avoid;box-shadow:none}
   nav.toc{display:none}
 }
+/* ── progressive disclosure (native <details>, no JS) ── */
+details.fold,details.planegroup{background:var(--panel);border:1px solid var(--line);border-radius:13px;margin:16px 0;overflow:hidden}
+details.fold>summary,details.planegroup>summary{cursor:pointer;list-style:none;padding:17px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;user-select:none}
+details.fold>summary::-webkit-details-marker,details.planegroup>summary::-webkit-details-marker{display:none}
+details.fold>summary::before,details.planegroup>summary::before{content:"\25B8";color:var(--muted);font-size:13px;transition:transform .12s ease;flex:none}
+details[open]>summary::before{transform:rotate(90deg)}
+details.fold>summary:hover .foldh,details.planegroup>summary:hover .foldh{color:var(--accent)}
+.foldh{font-size:16px;font-weight:650}
+.foldbody{padding:2px 24px 20px}
+.foldbody.doc>*:first-child{margin-top:0}
+.pgbody{padding:2px 16px 14px}
+.pgbody section.ca{margin:12px 0}
+.gcount{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.gbadge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.gbadge.f{background:var(--uca-bg);color:var(--uca);border-color:var(--uca)}
+.gbadge.t{background:var(--tomb-bg);color:var(--tomb)}
+.gbadge.b1{background:var(--uca);color:#fff;border-color:var(--uca)}
+.foldhint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+/* what's at stake — the human layer */
+.stake{border-left:3px solid var(--accent)}
+.stake>.lede{font-size:14.5px}
+ul.stakelist{list-style:none;margin:8px 0 6px;padding:0;display:grid;gap:7px}
+ul.stakelist li{padding:10px 14px;background:var(--bg);border:1px solid var(--line);border-radius:9px;font-size:13.5px;line-height:1.55}
+.lid,.hid{display:inline-block;font-weight:750;font-size:11.5px;color:var(--accent);background:var(--uca-bg);border:1px solid var(--uca);border-radius:6px;padding:1px 7px;margin-right:5px}
+.hz .hid{margin:0}
+table.hz th:nth-child(3),table.hz td:nth-child(3),table.hz th:nth-child(4),table.hz td:nth-child(4){text-align:center;white-space:nowrap;width:1%}
+.hcount{display:inline-block;font-weight:750;min-width:24px;padding:1px 9px;border-radius:20px;background:var(--uca-bg);color:var(--uca);border:1px solid var(--uca)}
+/* where to focus — the prioritization view */
+.focus{border-left:3px solid var(--uca)}
+.focuscards{display:grid;gap:10px;margin:10px 0 4px}
+.fcard{display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start;padding:14px 16px;background:var(--bg);border:1px solid var(--line);border-radius:11px}
+.frank{font-weight:750;font-size:19px;color:var(--uca);text-align:center;line-height:1.15}
+.fmeta{font-size:12px;color:var(--muted);margin-bottom:3px}
+.fclose{font-weight:750;color:var(--uca);font-size:14px}
+.fname{font-weight:650;font-size:14px;line-height:1.4;margin-bottom:4px}
+.ffix{font-size:13px;line-height:1.5}
+/* generated system diagram */
+.diagramwrap{margin:4px 0 6px}
+.sysdiagram{display:block;max-width:820px;margin:0 auto}
+.diagcap{font-size:11.5px;color:var(--muted);text-align:center;margin:8px 0 0;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.diagcap .dk b{color:var(--muted)}
+.diagcap .dkr b{color:var(--uca)}
+.subfold{margin-top:16px}
+.subfold>summary{padding:12px 16px}
+.sfh{font-size:13px!important;color:var(--muted)}
+/* trust / peer-review scorecard */
+.notreviewed{background:var(--uca-bg);border:1px solid var(--uca);color:var(--uca);border-radius:11px;padding:14px 18px;margin:16px 0;font-size:13.5px}
+.trust{border-left:3px solid var(--ok,#16a34a)}
+.trust.warn{border-left-color:var(--uca)}
+.trustgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 4px}
+.tstat{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tstat .v{font-size:22px;font-weight:750;line-height:1.1}
+.tstat .k{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+.tstat .k .muted{font-size:10.5px}
+/* STPA primer + glossary */
+.primer{border-left:3px solid var(--accent)}
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 12px}
+.chip-l{font-weight:650;font-size:12.5px;padding:3px 10px;border-radius:7px;background:var(--bg);border:1px solid var(--line)}
+.chain .arw{font-size:11px;color:var(--muted)}
+dl.glossary{display:grid;grid-template-columns:180px 1fr;gap:6px 16px;margin:14px 0 2px;font-size:13px;border-top:1px solid var(--line);padding-top:14px}
+dl.glossary dt{font-weight:700;color:var(--ink)}
+dl.glossary dd{margin:0;color:var(--ink);line-height:1.5}
+@media(max-width:640px){dl.glossary{grid-template-columns:1fr;gap:2px 0}dl.glossary dd{margin-bottom:8px;color:var(--muted)}}
+@media print{details.fold,details.planegroup{break-inside:avoid}details>*{display:block!important}details>summary::before{display:none}}
 </style></head><body><div class="wrap">
 
 <header class="top">
@@ -277,19 +342,19 @@ footer p{margin:0;max-width:74ch}
   <div class="bars"><h4>What kind of thing goes wrong <span class="barsub">bar length = how many · colour = how urgent</span></h4>
   <div class="bar">
         <div class="blabel"><div class="bname">Required control never happens</div><div class="bhint">a check, revocation, or record the system must do — and doesn't</div></div>
-        <div class="track"></div>
+        <div class="track"><div class="fill" style="width:0%"></div></div>
         <div class="n">0</div>
       </div><div class="bar">
         <div class="blabel"><div class="bname">Unsafe action is performed</div><div class="bhint">an action the system performs in a context where it causes harm</div></div>
-        <div class="track"><div class="seg sb-1" style="width:20%" title="1 in band 1"></div><div class="seg sb-2" style="width:40%" title="2 in band 2"></div><div class="seg sb-3" style="width:20%" title="1 in band 3"></div><div class="seg sb-4" style="width:20%" title="1 in band 4"></div></div>
+        <div class="track"><div class="fill" style="width:100%"><div class="seg sb-1" style="width:20%" title="1 in band 1"></div><div class="seg sb-2" style="width:40%" title="2 in band 2"></div><div class="seg sb-3" style="width:20%" title="1 in band 3"></div><div class="seg sb-4" style="width:20%" title="1 in band 4"></div></div></div>
         <div class="n">5</div>
       </div><div class="bar">
         <div class="blabel"><div class="bname">Right action, wrong moment</div><div class="bhint">too early, too late, or out of sequence with something else</div></div>
-        <div class="track"><div class="seg sb-3" style="width:20%" title="1 in band 3"></div></div>
+        <div class="track"><div class="fill" style="width:20%"><div class="seg sb-3" style="width:100%" title="1 in band 3"></div></div></div>
         <div class="n">1</div>
       </div><div class="bar">
         <div class="blabel"><div class="bname">Right action, wrong duration</div><div class="bhint">held open too long, or stopped before it finished doing its job</div></div>
-        <div class="track"><div class="seg sb-2" style="width:40%" title="2 in band 2"></div></div>
+        <div class="track"><div class="fill" style="width:40%"><div class="seg sb-2" style="width:100%" title="2 in band 2"></div></div></div>
         <div class="n">2</div>
       </div>
   <div class="barlegend"><span class="lg"><i class="sw sb-1"></i>band 1 · fix before ship</span><span class="lg"><i class="sw sb-2"></i>band 2 · this cycle</span><span class="lg"><i class="sw sb-3"></i>band 3 · scheduled</span><span class="lg"><i class="sw sb-4"></i>band 4 · accepted</span><span class="lg"><i class="sw sb-x"></i>not yet planned</span></div>
@@ -297,18 +362,148 @@ footer p{margin:0;max-width:74ch}
   </div>
 
   <nav class="toc">
-    <a href="#plan" class="primary">▸ Engineering plan</a>
-    <a href="#scope">Scope &amp; hazards</a>
-    <a href="#structure">Control structure</a>
+    <a href="#primer">Reading this report</a>
+    <a href="#overview" class="primary">▸ What this system is</a>
+    <a href="#structure">How it's built</a>
+    
+    <a href="#stake">What's at stake</a>
+    <a href="#focus" class="primary">▸ Where to focus</a>
+    <a href="#scenarios">How it goes wrong</a>
+    <a href="#constraints">What stops it</a>
+    <a href="#grid">Full grid</a>
     <a href="#pm">Process models</a>
-    <a href="#grid">UCA grid</a>
-    <a href="#scenarios">Loss scenarios</a>
-    <a href="#constraints">Constraints</a>
+    <a href="#plan">Engineering plan</a>
   </nav>
 </header>
 
-<section id="plan" class="block plan-block">
-  <h2>Engineering plan</h2>
+<!-- Narrative arc: what it is → how it's built → the seams → what's at stake →
+     the unsafe actions → scenarios → constraints → what to do (plan, last). -->
+<!-- Narrative arc: primer/glossary → what it is → how it's built (diagram) → the
+     seams → what's at stake → where to focus → findings & analysis → plan (last). -->
+<section id="primer"><details class="fold primer" open><summary><span class="foldh">Reading this report — STPA in 90 seconds</span></summary><div class="foldbody">
+  <p class="lede">This is an <strong>STPA</strong> analysis (System-Theoretic Process Analysis, and its security extension <strong>STPA-Sec</strong>). Instead of enumerating attacker techniques against each component — the approach of checklist methods like <strong>STRIDE</strong> — it models the system as <em>controllers</em> issuing <em>control actions</em> over <em>processes</em>, and asks where a legitimate action, in the wrong context, drives the system into a dangerous state. Its power is finding failures that <strong>emerge from the interaction of correctly-built components</strong> — broken authorization, tenant leaks, confused-deputy, bypass paths — the class attacker-checklists structurally miss. It complements STRIDE rather than replacing it.</p>
+  <p><strong>The analysis is a chain, each link narrowing the last:</strong></p>
+  <p class="chain"><span class="chip-l">Losses</span> <span class="arw">▸ caused by ▸</span> <span class="chip-l">Hazards</span> <span class="arw">▸ reached through ▸</span> <span class="chip-l">Unsafe control actions</span> <span class="arw">▸ which happen via ▸</span> <span class="chip-l">Loss scenarios</span> <span class="arw">▸ each inverted into ▸</span> <span class="chip-l">Constraints</span></p>
+  <p>So the three ways this report groups things are <em>one</em> picture from three angles: the <strong>four UCA types</strong> are the <em>mechanism</em> (the four ways any control can be unsafe) · the <strong>hazards</strong> are the dangerous <em>states</em> those mechanisms produce · the <strong>root causes</strong> (in <a href="#focus">Where to focus</a>) are the shared <em>fixes</em> — the few changes that close many findings at once.</p>
+  <dl class="glossary">
+    <dt>Loss</dt><dd>an outcome stakeholders find unacceptable — data exposed, money lost, trust broken.</dd>
+    <dt>Hazard</dt><dd>a system <em>state</em> that, in a worst-case environment, leads to a loss. A state, never an attacker action.</dd>
+    <dt>Controller</dt><dd>anything that exercises authority: a service, a human operator, a pipeline, a third party.</dd>
+    <dt>Control action</dt><dd>an authority-bearing action a controller takes — grant access, run a command, assume a role, write data.</dd>
+    <dt>Process model</dt><dd>what a controller <em>believes</em> about the system. Most authorization bugs are a controller acting on a stale or wrong belief.</dd>
+    <dt>Unsafe control action (UCA)</dt><dd>a control action that is unsafe in a specific context. Exactly four types: <em>not provided</em> (a needed control never happens) · <em>provided</em> (an action taken where it causes harm) · <em>wrong timing/order</em> · <em>too long / stopped too soon</em>.</dd>
+    <dt>Loss scenario</dt><dd>why a UCA occurs — or why a <em>correct</em> control fails to land because something bypasses it (the highest-value class).</dd>
+    <dt>Constraint</dt><dd>a MUST-NOT rule that <em>prevents</em> the hazard where prevention is possible, or <em>bounds</em> it — shrinks the blast radius, forces attribution — where it isn't. Each carries a runnable check.</dd>
+    <dt>Trust zone / blast radius</dt><dd>where a component sits (a per-customer deployment, the central plane, a cloud account) and how far a failure reaches (one tenant vs all). Together they set severity.</dd>
+    <dt>Band (1–4)</dt><dd>this analysis's priority order = severity × reachability. Not a probability, not a CVSS score.</dd>
+    <dt>IDOR</dt><dd>Insecure Direct Object Reference — using a caller-supplied id to read or act on a resource without checking the caller owns it.</dd>
+    <dt>Confused deputy</dt><dd>tricking a privileged component into using its authority on the attacker's behalf.</dd>
+    <dt>TOCTOU</dt><dd>time-of-check to time-of-use — a check and the action it guards race, so the state changes in between.</dd>
+    <dt>Prompt injection</dt><dd>attacker-controlled text that reaches an LLM agent and steers its tool calls or output.</dd>
+  </dl>
+</div></details></section>
+
+<div id="trust" class="notreviewed">⚠ <strong>NOT INDEPENDENTLY REVIEWED.</strong> This analysis has not passed an adversarial peer review by a second model — treat every finding and every band as a <em>draft</em>, not a verdict. Run <code>stpa verify</code> after the review pass.</div>
+
+<section id="overview"><details class="fold" open><summary><span class="foldh">1 · What this system is</span></summary><div class="foldbody doc"><p><strong>Target:</strong> Ledgerline — multi-tenant invoicing API. <strong>Modality B</strong>: the design document is the only input; no code exists. Surface 100% (8/8 control actions described by the document).</p></div></details></section>
+
+<section id="structure"><details class="fold" open><summary><span class="foldh">2 · How it's built — systems &amp; subsystems</span></summary><div class="foldbody"><div class="diagramwrap"><svg class="sysdiagram" viewBox="0 0 940 314" width="100%" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--muted)"/></marker><marker id="ard" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--uca)"/></marker></defs><rect x="270" y="18" width="400" height="44" rx="9" fill="var(--bg)" stroke="var(--line)"/><text x="470" y="44" font-size="12" font-weight="600" text-anchor="middle" fill="var(--ink)">Support console</text><rect x="30" y="92" width="880" height="78" rx="12" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/><text x="44" y="111" font-size="11" font-weight="700" letter-spacing="0.06em" fill="var(--muted)">LEDGERLINE · 0 SUBSYSTEMS</text><rect x="30" y="234" width="880" height="46" rx="9" fill="var(--bg)" stroke="var(--line)"/><text x="470" y="261" font-size="12" font-weight="600" text-anchor="middle" fill="var(--ink)">Shared Postgres</text><line x1="462" y1="170" x2="462" y2="234" stroke="var(--muted)" stroke-width="1.4" marker-end="url(#ar)"/><line x1="478" y1="234" x2="478" y2="170" stroke="var(--line)" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ar)"/><line x1="470" y1="62" x2="470" y2="92" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#ar)"/></svg><p class="diagcap"><span class="dk"><b>→</b> control action</span> <span class="dk"><b>⇢</b> feedback (dashed — often absent; see §9)</span> <span class="dk dkr"><b>→</b> cross-account / bus edges (the crown-jewel paths)</span></p></div><details class="fold subfold"><summary><span class="foldh sfh">Control-structure detail — controllers, control actions, process-model beliefs</span></summary><div class="foldbody doc"><p>Read entirely off <code>DESIGN.md</code>. Six controllers, eight control actions, four feedback channels — three of which do not exist.</p>
+<h2>Process models — the highest-yield table in the analysis</h2>
+<p>Six of eight findings trace to a row here. Note how each belief was extracted: the document never writes &quot;the gateway <em>trusts</em> the orgId claim&quot;, it writes that the gateway <em>attaches</em> orgId <em>from</em> the token. Same sentence, read as <code>believes / sourced from / staleness</code>.</p>
+<div class="tablewrap"><table><thead><tr><th>ID</th><th>Controller believes</th><th>Sourced from</th><th>Staleness</th></tr></thead><tbody><tr><td><strong>PM-1</strong></td><td>the <code>orgId</code> in the token is the caller's current org</td><td>the JWT claim, minted at login, never re-read</td><td>token lifetime — and the review notes say removal does not revoke sessions, so it is wrong for exactly that long</td></tr><tr><td><strong>PM-2</strong></td><td>the presenter of a pay-link token is the invoice's customer</td><td>possession of a UUIDv4 that never rotates</td><td><strong>permanent</strong> — the token outlives the payment, the relationship and any dispute</td></tr><tr><td><strong>PM-3</strong></td><td>an impersonation session is distinguishable from the member's own</td><td>a <code>staff: true</code> claim no service is documented to read</td><td>asserted, never checked</td></tr><tr><td><strong>PM-4</strong></td><td>the <code>orgId</code> attached by the gateway is authoritative</td><td>a header set upstream, trusted without re-derivation</td><td>per request, and only ever as good as PM-1</td></tr><tr><td><strong>PM-5</strong></td><td>the email on an overdue invoice is still the right recipient</td><td>the invoice row as written at issue time</td><td>unbounded — an invoice stays overdue for months</td></tr><tr><td><strong>PM-6</strong></td><td>the configured webhook URL is an external endpoint the org controls</td><td>a free-text settings field, no validation described</td><td>whatever was last typed</td></tr></tbody></table></div>
+<h2>Feedback</h2>
+<div class="tablewrap"><table><thead><tr><th>ID</th><th>Channel</th><th>State</th></tr></thead><tbody><tr><td><strong>F-1</strong></td><td>pay-link service → org</td><td><strong>ABSENT.</strong> No record of who fetched an invoice by token, so scraping is indistinguishable from a customer opening their bill</td></tr><tr><td><strong>F-2</strong></td><td>support console → impersonated member</td><td><strong>ABSENT.</strong> The member is never told, and has no audit surface to read</td></tr><tr><td><strong>F-3</strong></td><td>webhook dispatcher → security review</td><td><strong>ABSENT.</strong> No allow-list check and no egress log on an org-supplied URL</td></tr><tr><td><strong>F-4</strong></td><td>invoice service → org</td><td>Present (invoice audit trail)</td></tr></tbody></table></div>
+<p>Three of four channels do not exist. That is a Step-2 finding on its own: no unsafe control action is required for it to hurt you, because it is what makes every other finding silent.</p></div></details></div></details></section>
+
+
+
+<section id="stake"><details class="fold stake" open><summary><span class="foldh">4 · What's at stake</span></summary><div class="foldbody">
+
+  <p class="lede">The losses this system must avoid, and the hazardous states that lead to them. Everything below — the plan, the control structure, the 8 findings — exists to keep the system out of these states.</p>
+  <h3>Losses <span class="muted">— what would actually hurt, in business terms</span></h3>
+  <ul class="stakelist"><li><span class="lid">L-1</span>  — — one organisation's invoice data is disclosed to a party outside that organisation.</li><li><span class="lid">L-2</span>  — — Ledgerline staff read customer data without a business reason, and the customer cannot tell.</li></ul>
+  <h3>Hazards <span class="muted">— unsafe system states, ranked by how many findings reach them</span></h3>
+  <div class="tablewrap"><table class="hz"><thead><tr><th>Hazard</th><th>What it means (a state, not an attack)</th><th>Findings</th><th>Worst</th></tr></thead><tbody><tr><td><span class="hid">H-1</span></td><td>— the system serves invoice data to a principal whose entitlement to that organisation is not current. (→ L-1)</td><td class="hzn"><span class="muted">0</span></td><td><span class="muted">—</span></td></tr><tr><td><span class="hid">H-2</span></td><td>— the system grants a staff principal access to an organisation's data with no record the organisation can read. (→ L-2)</td><td class="hzn"><span class="muted">0</span></td><td><span class="muted">—</span></td></tr><tr><td><span class="hid">H-3</span></td><td>— the system delivers organisation event data to a network endpoint it has not established is external and org-controlled. (→ L-1)</td><td class="hzn"><span class="muted">0</span></td><td><span class="muted">—</span></td></tr></tbody></table></div>
+</div></details></section>
+
+<section id="focus"><details class="fold focus" open><summary><span class="foldh">5 · Where to focus</span></summary><div class="foldbody">
+
+  <p class="lede">8 findings is a lot — but they collapse to 4 root causes, and a handful close most of them. <strong>The top 4 account for 8 of 8 findings (100%).</strong> 1 findings are band-1 — ship-blockers. Fix these first; the rest is downstream.</p>
+  <div class="focuscards"><div class="fcard">
+      <div class="frank">1</div>
+      <div class="fbody">
+        <div class="fmeta"><span class="fclose">3</span> findings <span class="muted">·</span> <span class="band band-2">band 2</span> <span class="muted">·</span> <span class="eff eff-M">M</span> <span class="effw">days</span></div>
+        <div class="fname"><span class="lid">RC-1</span> The gateway mints orgId at login and never re-reads it, and the invoice service trusts the header the gateway attaches. Neither component owns the belief, so neither refreshes it. The design note 'existing sessions are not revoked' is the same defect stated as a fact.</div>
+        <div class="ffix"><strong>Do:</strong> Derive org membership at the point of use, from the membership table, with a short cache. Make the gateway header advisory rather than authoritative.</div>
+      </div>
+    </div><div class="fcard">
+      <div class="frank">2</div>
+      <div class="fbody">
+        <div class="fmeta"><span class="fclose">2</span> findings <span class="muted">·</span> <span class="band band-2">band 2</span> <span class="muted">·</span> <span class="eff eff-S">S</span> <span class="effw">hours</span></div>
+        <div class="fname"><span class="lid">RC-2</span> Pay links are UUIDv4s that never rotate or expire, and they are distributed by email — so every copy that email produces is a permanent credential. No check can distinguish the customer from anyone the customer forwarded the mail to.</div>
+        <div class="ffix"><strong>Do:</strong> Bind pay-link validity to invoice state: expire at payment, rotate on dispute, and require a second factor the customer already holds.</div>
+      </div>
+    </div><div class="fcard">
+      <div class="frank">3</div>
+      <div class="fbody">
+        <div class="fmeta"><span class="fclose">2</span> findings <span class="muted">·</span> <span class="band band-3">band 3</span> <span class="muted">·</span> <span class="eff eff-L">L</span> <span class="effw">weeks</span></div>
+        <div class="fname"><span class="lid">RC-4</span> No pay-link access log, no impersonation notice the org can read, no webhook egress log. Every other finding here is silent, and every fix above can regress unobserved.</div>
+        <div class="ffix"><strong>Do:</strong> Log the pay-link fetch, expose an org-readable impersonation trail, and record webhook egress destinations.</div>
+      </div>
+    </div><div class="fcard">
+      <div class="frank">4</div>
+      <div class="fbody">
+        <div class="fmeta"><span class="fclose">1</span> findings <span class="muted">·</span> <span class="band band-1">band 1</span> <span class="muted">·</span> <span class="eff eff-M">M</span> <span class="effw">days</span></div>
+        <div class="fname"><span class="lid">RC-3</span> The webhook URL is a free-text field consumed from inside the production network. Validation at save cannot bind the address at dispatch.</div>
+        <div class="ffix"><strong>Do:</strong> Route all webhook egress through a proxy that resolves and refuses non-public addresses at connect time.</div>
+      </div>
+    </div></div>
+  <p class="foldhint">Full remediation — every finding with its <code>file:line</code> and a runnable probe, sequenced into waves — is in <a href="#plan">the engineering plan</a> at the end.</p>
+</div></details></section>
+
+<section id="scenarios"><details class="fold" open><summary><span class="foldh">6 · How it goes wrong — loss scenarios</span></summary><div class="foldbody doc"><p><strong>Part A</strong> — why the unsafe control action occurs. <strong>Part B</strong> — why a <em>correct</em> control action fails to land. Part B is the bypass class, and Step 3 structurally cannot reach it, because in Part B nothing unsafe was ever commanded.</p>
+<p>---</p>
+<h2>S-1 — A removed member keeps reading invoices · CA-2.provided, CA-6.duration, CA-1.timing-order · PM-1, PM-4</h2>
+<p><strong>Part A.</strong> The gateway mints <code>orgId</code> into the token at login and never re-reads it. The invoice service then trusts the header the gateway attaches, so the belief is laundered through two components without either one owning it. Remove a member and the row changes; the token does not. For the rest of the token's lifetime the system serves that member their former org's invoices, and every component involved is behaving exactly as designed.</p>
+<p><strong>Part B.</strong> Re-reading membership on every request fixes the API and does not fix the loss, because <strong>the session is not the only credential that outlives the relationship</strong>. That member has pay links in their inbox (S-2), an export they downloaded last week, and possibly a webhook URL they configured that still points at a host they control (S-3). Revocation that reaches only the session boundary leaves three other paths open — and the design document describes no inventory of what a departing member holds, so nobody can enumerate them.</p>
+<p>---</p>
+<h2>S-2 — The pay link is permanent · CA-3.provided, CA-3.duration · PM-2, F-1</h2>
+<p><strong>Part A.</strong> Entitlement is possession of a UUIDv4 that never rotates and never expires. UUIDv4 is unguessable, so this is not a brute-force finding — it is a <strong>distribution</strong> finding. The token is emailed, which means it lands in a mailbox, a mail archive, a forwarded thread, a shared inbox, a helpdesk ticket, and a browser history. Every one of those is a copy that outlives the payment.</p>
+<p><strong>Part B — the cleanest bypass in this example.</strong> Suppose the token check is perfect. It is <em>still</em> correct to serve the invoice to whoever presents it, because the design defines entitlement as possession. No authorization logic can distinguish the customer from the person the customer forwarded the mail to; the control loop is working exactly as specified and the data leaves anyway. The fix is therefore not in the check — it is in the <strong>lifetime and the binding</strong>: expire the token at payment, rotate on dispute, and require a second factor the customer already has. And with <strong>F-1 absent</strong>, nobody can even measure how often this happens, so there is no evidence to motivate the change.</p>
+<p>---</p>
+<h2>S-3 — The webhook URL is an SSRF primitive · CA-8.provided · PM-6, F-3</h2>
+<p><strong>Part A.</strong> The org types a URL into a settings field and the dispatcher POSTs to it from inside the production network. PM-6 believes the URL is an external endpoint the org controls; nothing establishes either half of that belief. <code>http://169.254.169.254/</code>, <code>http://localhost:6379/</code>, and an internal admin host are all valid strings.</p>
+<p><strong>Part B.</strong> An allow-list on save is the obvious control and it is bypassable without any incorrect control action occurring: <strong>the name resolves at dispatch, not at save.</strong> A hostname that validated cleanly on Tuesday can point at a link-local address on Wednesday — DNS rebinding needs nothing in the request path to malfunction. Validation and use are separated by an interval the design does not close, which is a TOCTOU with a network in the middle. The control has to live at egress — a proxy that resolves and refuses — not at the form.</p>
+<p>---</p>
+<h2>S-4 — Impersonation is invisible · CA-5.provided · PM-3, F-2</h2>
+<p><strong>Part A.</strong> Staff select a member and receive a session acting as them. The document describes no ticket requirement, no consent step, and no scope limit. PM-3 asserts the <code>staff: true</code> claim makes the session distinguishable, but the document names no service that reads it — an assertion with no consumer.</p>
+<p><strong>Part B.</strong> Add the ticket requirement and the loss survives, because <strong>the record is written where the affected party cannot read it</strong>. F-2 does not exist: the member is never notified, and there is no audit surface exposed to the organisation. Internal logging satisfies the auditor and does nothing for the customer — and the customer is the only party with both the motive and the context to spot an impersonation that had a plausible ticket attached to it. Accountability that only points inward is not accountability to the person whose data was read.</p>
+<p>---</p>
+<h2>S-5 — The reminder emails the wrong person · CA-7.provided · PM-5</h2>
+<p><strong>Part A.</strong> The recipient is snapshotted onto the invoice at issue time. An invoice can be overdue for months; contacts change, people leave, addresses get reassigned. The job faithfully mails invoice contents to an address that was correct once.</p>
+<p><strong>Part B.</strong> Reading the current contact at send time fixes the common case and introduces its own: the <em>current</em> contact may be a person who was not party to the original transaction. There is no single correct answer here, which is exactly why it belongs in the design review rather than in a ticket. The finding's real output is a question for the author — <strong>whose invoice is it, the org's or the individual's?</strong> — and the document does not say.</p></div></details></section>
+<section id="chains"><details class="fold" open><summary><span class="foldh">6b · How findings chain — composed reachability</span></summary><div class="foldbody doc"><p>Reachability is not a property of a finding. It is a property of a finding <strong>given what the other findings hand the attacker.</strong> A finding rated R3 (&quot;needs a foothold&quot;) is not R3 if another finding in this same report <em>is</em> the foothold. This section recomputes every band with that in mind.</p>
+<blockquote><strong>Not STPA doctrine and not a probability.</strong> STPA has no likelihood model and no notion of chained findings. Composed bands order this analysis's own findings and nothing else.</blockquote>
+<p><strong>8 of 8 findings (100%) declare grants/requires.</strong> Findings that declare neither cannot chain and cannot be chained to — an undeclared finding is invisible here, so a low percentage means this section is weak, not that the system is safe.</p>
+<h2>No composed upgrades</h2>
+<p>No finding's reachability improved through another finding. That is a real result only if the declaration rate above is high — otherwise it means the inputs were not filled in.</p>
+<h2>What to do with this</h2>
+<p>A composed upgrade is not a new finding — it is the same finding, correctly rated. Set the composed reachability in <code>remediation.json</code> and re-run <code>stpa plan</code>, or record why the chain does not hold (a control between the two links that neither finding mentions). Leaving a composed upgrade unaddressed is how a report ships an R3 that is really an R0.</p></div></details></section>
+<section id="constraints"><details class="fold"><summary><span class="foldh">7 · What must hold to stop it — security constraints</span></summary><div class="foldbody doc"><div class="tablewrap"><table><thead><tr><th>ID</th><th>Constraint</th><th>Probe</th></tr></thead><tbody><tr><td><strong>SC-1</strong></td><td>An authorization decision MUST NOT rely on an <code>orgId</code> claim without confirming current membership.</td><td>Test: remove a member, then call an invoice route with their pre-removal token → 403.</td></tr><tr><td><strong>SC-2</strong></td><td>A pay-link token MUST NOT remain valid after the invoice is paid or voided.</td><td>Test: pay an invoice, re-fetch by token → 410.</td></tr><tr><td><strong>SC-3</strong></td><td>The invoice service MUST NOT trust an <code>orgId</code> header that a client could set.</td><td>Test: send the header directly, bypassing the gateway → rejected.</td></tr><tr><td><strong>SC-4</strong></td><td>A staff impersonation session MUST NOT be established without a recorded reason visible to the impersonated organisation.</td><td>Assert an org-readable audit row exists for every session with <code>staff: true</code>.</td></tr><tr><td><strong>SC-5</strong></td><td>The webhook dispatcher MUST NOT connect to an address outside the public-internet ranges, resolved <strong>at dispatch time</strong>.</td><td>Test: configure a hostname that resolves to 169.254.169.254 at dispatch → connection refused and logged.</td></tr><tr><td><strong>SC-6</strong></td><td>Pay-link fetches MUST be recorded with source and timestamp.</td><td>Assert a row exists per fetch; alert on N fetches from distinct sources for one invoice.</td></tr></tbody></table></div></div></details></section>
+
+<section id="grid" class="block"><h2>8 · Unsafe control actions — the full enumeration</h2>
+<p>The exhaustive backing for the scenarios above: every control action considered against all four UCA types — <strong>32</strong> cells. A cell resolves as a finding bound to a declared control-structure element, or as a tombstone with a written reason. Both are results; an open cell is not.</p>
+
+</section>
+<details class="planegroup" open><summary><span class="foldh">All control actions</span><span class="gcount"><span class="gbadge f">8 findings</span><span class="gbadge t">24 ruled out</span><span class="gbadge b1">1 band-1</span><span class="gbadge">8 actions</span></span></summary><div class="pgbody"><section class="ca"><h3><span class="caid">CA-1</span> issue a session for a member<span class="ctrl">API gateway</span><span class="cacount">1 finding</span></h3><div class="tablewrap"><table class="grid"><thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead><tbody><tr class="tombstone"><td class="ttype">Required control never happens</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Unsafe action is performed</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="uca"><td class="ttype">Right action, wrong moment</td><td><span class="pill pill-uca">UCA</span></td><td class="tbody">The API gateway mints a session carrying an orgId before membership is confirmed current, leading to H-1 for the token's lifetime.</td><td class="tmeta"><code>PM-1</code></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong duration</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td><td class="tmeta"></td><td class="tmeta"></td></tr></tbody></table></div></section><section class="ca"><h3><span class="caid">CA-2</span> serve an invoice to a session<span class="ctrl">Invoice service</span><span class="cacount">1 finding</span></h3><div class="tablewrap"><table class="grid"><thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead><tbody><tr class="tombstone"><td class="ttype">Required control never happens</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="uca"><td class="ttype">Unsafe action is performed</td><td><span class="pill pill-uca">UCA</span></td><td class="tbody">The invoice service serves an invoice to a session when the session's orgId claim no longer matches the caller's current membership, leading to H-1 (a former member reads an org's invoices).</td><td class="tmeta"><code>PM-1</code> <code>PM-4</code></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong moment</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong duration</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td><td class="tmeta"></td><td class="tmeta"></td></tr></tbody></table></div></section><section class="ca"><h3><span class="caid">CA-3</span> serve an invoice by pay-link token<span class="ctrl">Pay-link service</span><span class="cacount">2 findings</span></h3><div class="tablewrap"><table class="grid"><thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead><tbody><tr class="tombstone"><td class="ttype">Required control never happens</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="uca"><td class="ttype">Unsafe action is performed</td><td><span class="pill pill-uca">UCA</span></td><td class="tbody">The pay-link service serves an invoice when the presenter is anyone who has ever seen the link, including after the customer relationship ends, leading to H-1 (invoice contents disclosed to a non-customer).</td><td class="tmeta"><code>PM-2</code> <code>F-1</code></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong moment</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="uca"><td class="ttype">Right action, wrong duration</td><td><span class="pill pill-uca">UCA</span></td><td class="tbody">The pay-link service keeps honouring a pay-link token indefinitely after the invoice is paid, leading to H-1.</td><td class="tmeta"><code>PM-2</code></td><td class="tmeta"></td></tr></tbody></table></div></section><section class="ca"><h3><span class="caid">CA-4</span> modify or void an invoice<span class="ctrl">Invoice service</span><span class="cacount">0 findings</span></h3><div class="tablewrap"><table class="grid"><thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead><tbody><tr class="tombstone"><td class="ttype">Required control never happens</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Unsafe action is performed</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong moment</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong duration</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td><td class="tmeta"></td><td class="tmeta"></td></tr></tbody></table></div></section><section class="ca"><h3><span class="caid">CA-5</span> grant a staff member an impersonation session<span class="ctrl">Support console</span><span class="cacount">1 finding</span></h3><div class="tablewrap"><table class="grid"><thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead><tbody><tr class="tombstone"><td class="ttype">Required control never happens</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="uca"><td class="ttype">Unsafe action is performed</td><td><span class="pill pill-uca">UCA</span></td><td class="tbody">The support console grants an impersonation session when the staff member has no ticket or consent tying them to that org, leading to H-2 (staff read customer data without a business reason).</td><td class="tmeta"><code>PM-3</code> <code>F-2</code></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong moment</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong duration</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td><td class="tmeta"></td><td class="tmeta"></td></tr></tbody></table></div></section><section class="ca"><h3><span class="caid">CA-6</span> remove a member from an org<span class="ctrl">API gateway</span><span class="cacount">1 finding</span></h3><div class="tablewrap"><table class="grid"><thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead><tbody><tr class="tombstone"><td class="ttype">Required control never happens</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Unsafe action is performed</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong moment</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="uca"><td class="ttype">Right action, wrong duration</td><td><span class="pill pill-uca">UCA</span></td><td class="tbody">The API gateway continues to honour sessions minted before a member was removed, for the remainder of the token lifetime, leading to H-1.</td><td class="tmeta"><code>PM-1</code></td><td class="tmeta"></td></tr></tbody></table></div></section><section class="ca"><h3><span class="caid">CA-7</span> send an overdue reminder email<span class="ctrl">Reminder job</span><span class="cacount">1 finding</span></h3><div class="tablewrap"><table class="grid"><thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead><tbody><tr class="tombstone"><td class="ttype">Required control never happens</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="uca"><td class="ttype">Unsafe action is performed</td><td><span class="pill pill-uca">UCA</span></td><td class="tbody">The reminder job emails an overdue invoice to the address captured at issue time when that address is no longer the customer's, leading to H-1.</td><td class="tmeta"><code>PM-5</code></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong moment</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong duration</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td><td class="tmeta"></td><td class="tmeta"></td></tr></tbody></table></div></section><section class="ca"><h3><span class="caid">CA-8</span> dispatch a payment webhook<span class="ctrl">Webhook dispatcher</span><span class="cacount">1 finding</span></h3><div class="tablewrap"><table class="grid"><thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead><tbody><tr class="tombstone"><td class="ttype">Required control never happens</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="uca"><td class="ttype">Unsafe action is performed</td><td><span class="pill pill-uca">UCA</span></td><td class="tbody">The webhook dispatcher POSTs a payment event when the configured URL points at an internal address, leading to H-3 (internal endpoints reached from inside the trust boundary, and event contents delivered to an unintended host).</td><td class="tmeta"><code>PM-6</code> <code>F-3</code></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong moment</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td><td class="tmeta"></td><td class="tmeta"></td></tr><tr class="tombstone"><td class="ttype">Right action, wrong duration</td><td><span class="pill pill-tomb">no hazard</span></td><td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td><td class="tmeta"></td><td class="tmeta"></td></tr></tbody></table></div></section></div></details>
+
+<section id="pm"><details class="fold"><summary><span class="foldh">9 · What each part believes — process models &amp; feedback</span></summary><div class="foldbody">
+  <p>The detailed belief table: what each controller <em>believes</em>, where the belief comes from, and how stale it can be. Process-model inconsistency is the general form of the authorization bug — this is the reference behind the findings above.</p>
+  <div class="tablewrap"><table><thead><tr><th>ID</th><th>Controller</th><th>Believes</th><th>Sourced from</th><th>Staleness</th></tr></thead><tbody><tr><td><code>PM-1</code></td><td>API gateway</td><td>the orgId in the token is the caller's current org</td><td>the JWT claim, minted at login and never re-read</td><td>token lifetime — the review notes say removal does not revoke existing sessions, so this is wrong for exactly as long as a token lives</td></tr><tr><td><code>PM-2</code></td><td>Pay-link service</td><td>the presenter of a pay-link token is the invoice's customer</td><td>possession of a UUIDv4 that never rotates</td><td>permanent — the token outlives the payment, the customer relationship, and any dispute</td></tr><tr><td><code>PM-3</code></td><td>Support console</td><td>an impersonation session is distinguishable from the member's own session</td><td>a staff:true claim that downstream services are not documented to read</td><td>the belief is asserted, never checked</td></tr><tr><td><code>PM-4</code></td><td>Invoice service</td><td>the orgId attached by the gateway is authoritative</td><td>a header set by an upstream component, trusted without re-derivation</td><td>per request, and only as good as PM-1</td></tr><tr><td><code>PM-5</code></td><td>Reminder job</td><td>the email address on an overdue invoice is still the right recipient</td><td>the invoice row as written at issue time</td><td>unbounded — an invoice can be overdue for months after the contact changed</td></tr><tr><td><code>PM-6</code></td><td>Webhook dispatcher</td><td>the configured webhook URL is an external endpoint the org controls</td><td>a free-text settings field with no validation described</td><td>whatever was last typed</td></tr></tbody></table></div>
+  <h3>Feedback channels</h3><div class="tablewrap"><table><thead><tr><th>ID</th><th>Path</th><th>Signal</th></tr></thead><tbody><tr><td><code>F-1</code></td><td>pay-link service → org</td><td>NONE — no record of who fetched an invoice by token, so scraping is indistinguishable from a customer opening their bill</td></tr><tr><td><code>F-2</code></td><td>support console → impersonated member</td><td>NONE — the member is never told they were impersonated; the document describes no notification and no audit surface they can read</td></tr><tr><td><code>F-3</code></td><td>webhook dispatcher → security review</td><td>NONE — no allow-list check or egress log on the org-supplied URL</td></tr><tr><td><code>F-4</code></td><td>invoice service → org</td><td>invoice audit trail — described in the document and assumed present</td></tr></tbody></table></div>
+  </div></details></section>
+
+<section id="plan"><details class="fold plan-block"><summary><span class="foldh">10 · Engineering plan</span><span class="gcount"><span class="gbadge">8 findings → 4 root causes</span><span class="gbadge b1">Wave 1 · 3 items</span></span></summary><div class="foldbody">
   <p class="lede"><strong>8 findings collapse to 4 root causes.</strong>
   1 band-1, 4 band-2. 2 quick wins (band&nbsp;≤2, hours of work).
   Wave&nbsp;1 is 3 items and closes 60% of everything band-2-or-worse.</p>
@@ -438,327 +633,7 @@ footer p{margin:0;max-width:74ch}
   <tr><td><span class="band band-4">4</span></td><td>Accept in writing</td><td><code>R3</code></td><td>requires a prior foothold</td></tr>
   <tr><td></td><td></td><td><code>R4</code></td><td>requires an insider or supply-chain compromise</td></tr>
   </tbody></table></div>
-  </section>
-
-<section id="scope" class="doc"><h2>1 · Scope, losses and hazards</h2><h1>Scope, losses and hazards</h1>
-<p><strong>Target:</strong> Ledgerline — multi-tenant invoicing API. <strong>Modality B</strong>: the design document is the only input; no code exists. Surface 100% (8/8 control actions described by the document).</p>
-<h2>Losses</h2>
-<ul>
-<li><strong>L-1</strong> — one organisation's invoice data is disclosed to a party outside that organisation.</li>
-<li><strong>L-2</strong> — Ledgerline staff read customer data without a business reason, and the customer cannot tell.</li>
-</ul>
-<p>Availability losses are deliberately <strong>not</strong> declared. Tombstones that cite &quot;out of hazard&quot; name which loss they fall outside, so the boundary is legible rather than implied.</p>
-<h2>Hazards — system states, never attacker actions</h2>
-<ul>
-<li><strong>H-1</strong> — the system serves invoice data to a principal whose entitlement to that organisation is not current. <em>(→ L-1)</em></li>
-<li><strong>H-2</strong> — the system grants a staff principal access to an organisation's data with no record the organisation can read. <em>(→ L-2)</em></li>
-<li><strong>H-3</strong> — the system delivers organisation event data to a network endpoint it has not established is external and org-controlled. <em>(→ L-1)</em></li>
-</ul>
-<p>Note the shape. &quot;An attacker guesses a pay-link token&quot; is not a hazard — it is an attacker action. The hazard is the state the system is in: <em>serving invoice data to a principal whose entitlement is not current</em>. Guessing the token is one way to reach that state; so is a forwarded email, a browser-history export, and a support agent pasting the link into a ticket. Writing the state instead of the action is what makes the finding survive techniques nobody has thought of yet.</p>
-<h2>Assumptions log</h2>
-<p>Modality B produces one every time, and on a real review it is often the most valuable artifact — each line is a question for the document's author.</p>
-<div class="tablewrap"><table><thead><tr><th>#</th><th>Assumed</th><th>Because the document does not say</th><th>Ask</th></tr></thead><tbody><tr><td>A-1</td><td>Session tokens are bearer JWTs with a lifetime measured in hours</td><td>&quot;validates the session JWT&quot;</td><td>What is the TTL, and is there a revocation list?</td></tr><tr><td>A-2</td><td>The gateway sets an internal header the invoice service trusts</td><td>&quot;attaches <code>orgId</code> from the token&quot;</td><td>Can a client set that header directly? Is the gateway the only ingress?</td></tr><tr><td>A-3</td><td>Downstream services do not read the <code>staff: true</code> claim</td><td>It is described as carried, never as consumed</td><td>Which services branch on it? What do they do differently?</td></tr><tr><td>A-4</td><td>Pay-link tokens appear in emails sent to customers</td><td>&quot;a public pay link lets a customer view and pay&quot;</td><td>How is the link delivered, and to how many recipients?</td></tr><tr><td>A-5</td><td>The webhook dispatcher runs inside the production network</td><td>It is listed as a component with no isolation note</td><td>Does it egress through a proxy? Is there an allow-list?</td></tr><tr><td>A-6</td><td>Removal from an org is a database update with no session sweep</td><td>&quot;existing sessions are not revoked&quot;</td><td>Is that a decision or an omission?</td></tr></tbody></table></div>
-<p><strong>A-6 is the highest-value line in the table.</strong> The document states it as a fact in a review note, and it is the direct cause of two of the eight findings. In a real review this is the moment to ask whether anyone realised they were writing down a vulnerability.</p></section>
-<section id="structure" class="doc"><h2>2 · Control structure</h2><h1>Control structure</h1>
-<p>Read entirely off <code>DESIGN.md</code>. Six controllers, eight control actions, four feedback channels — three of which do not exist.</p>
-<h2>Process models — the highest-yield table in the analysis</h2>
-<p>Six of eight findings trace to a row here. Note how each belief was extracted: the document never writes &quot;the gateway <em>trusts</em> the orgId claim&quot;, it writes that the gateway <em>attaches</em> orgId <em>from</em> the token. Same sentence, read as <code>believes / sourced from / staleness</code>.</p>
-<div class="tablewrap"><table><thead><tr><th>ID</th><th>Controller believes</th><th>Sourced from</th><th>Staleness</th></tr></thead><tbody><tr><td><strong>PM-1</strong></td><td>the <code>orgId</code> in the token is the caller's current org</td><td>the JWT claim, minted at login, never re-read</td><td>token lifetime — and the review notes say removal does not revoke sessions, so it is wrong for exactly that long</td></tr><tr><td><strong>PM-2</strong></td><td>the presenter of a pay-link token is the invoice's customer</td><td>possession of a UUIDv4 that never rotates</td><td><strong>permanent</strong> — the token outlives the payment, the relationship and any dispute</td></tr><tr><td><strong>PM-3</strong></td><td>an impersonation session is distinguishable from the member's own</td><td>a <code>staff: true</code> claim no service is documented to read</td><td>asserted, never checked</td></tr><tr><td><strong>PM-4</strong></td><td>the <code>orgId</code> attached by the gateway is authoritative</td><td>a header set upstream, trusted without re-derivation</td><td>per request, and only ever as good as PM-1</td></tr><tr><td><strong>PM-5</strong></td><td>the email on an overdue invoice is still the right recipient</td><td>the invoice row as written at issue time</td><td>unbounded — an invoice stays overdue for months</td></tr><tr><td><strong>PM-6</strong></td><td>the configured webhook URL is an external endpoint the org controls</td><td>a free-text settings field, no validation described</td><td>whatever was last typed</td></tr></tbody></table></div>
-<h2>Feedback</h2>
-<div class="tablewrap"><table><thead><tr><th>ID</th><th>Channel</th><th>State</th></tr></thead><tbody><tr><td><strong>F-1</strong></td><td>pay-link service → org</td><td><strong>ABSENT.</strong> No record of who fetched an invoice by token, so scraping is indistinguishable from a customer opening their bill</td></tr><tr><td><strong>F-2</strong></td><td>support console → impersonated member</td><td><strong>ABSENT.</strong> The member is never told, and has no audit surface to read</td></tr><tr><td><strong>F-3</strong></td><td>webhook dispatcher → security review</td><td><strong>ABSENT.</strong> No allow-list check and no egress log on an org-supplied URL</td></tr><tr><td><strong>F-4</strong></td><td>invoice service → org</td><td>Present (invoice audit trail)</td></tr></tbody></table></div>
-<p>Three of four channels do not exist. That is a Step-2 finding on its own: no unsafe control action is required for it to hurt you, because it is what makes every other finding silent.</p></section>
-
-<section id="pm" class="block"><h2>Process models &amp; feedback</h2>
-  <p>What each controller <em>believes</em>, where the belief comes from, and how stale it can be. Process-model inconsistency is the general form of the authorization bug — this table is where most findings originate.</p>
-  <div class="tablewrap"><table><thead><tr><th>ID</th><th>Controller</th><th>Believes</th><th>Sourced from</th><th>Staleness</th></tr></thead><tbody><tr><td><code>PM-1</code></td><td>API gateway</td><td>the orgId in the token is the caller's current org</td><td>the JWT claim, minted at login and never re-read</td><td>token lifetime — the review notes say removal does not revoke existing sessions, so this is wrong for exactly as long as a token lives</td></tr><tr><td><code>PM-2</code></td><td>Pay-link service</td><td>the presenter of a pay-link token is the invoice's customer</td><td>possession of a UUIDv4 that never rotates</td><td>permanent — the token outlives the payment, the customer relationship, and any dispute</td></tr><tr><td><code>PM-3</code></td><td>Support console</td><td>an impersonation session is distinguishable from the member's own session</td><td>a staff:true claim that downstream services are not documented to read</td><td>the belief is asserted, never checked</td></tr><tr><td><code>PM-4</code></td><td>Invoice service</td><td>the orgId attached by the gateway is authoritative</td><td>a header set by an upstream component, trusted without re-derivation</td><td>per request, and only as good as PM-1</td></tr><tr><td><code>PM-5</code></td><td>Reminder job</td><td>the email address on an overdue invoice is still the right recipient</td><td>the invoice row as written at issue time</td><td>unbounded — an invoice can be overdue for months after the contact changed</td></tr><tr><td><code>PM-6</code></td><td>Webhook dispatcher</td><td>the configured webhook URL is an external endpoint the org controls</td><td>a free-text settings field with no validation described</td><td>whatever was last typed</td></tr></tbody></table></div>
-  <h3>Feedback channels</h3><div class="tablewrap"><table><thead><tr><th>ID</th><th>Path</th><th>Signal</th></tr></thead><tbody><tr><td><code>F-1</code></td><td>pay-link service → org</td><td>NONE — no record of who fetched an invoice by token, so scraping is indistinguishable from a customer opening their bill</td></tr><tr><td><code>F-2</code></td><td>support console → impersonated member</td><td>NONE — the member is never told they were impersonated; the document describes no notification and no audit surface they can read</td></tr><tr><td><code>F-3</code></td><td>webhook dispatcher → security review</td><td>NONE — no allow-list check or egress log on the org-supplied URL</td></tr><tr><td><code>F-4</code></td><td>invoice service → org</td><td>invoice audit trail — described in the document and assumed present</td></tr></tbody></table></div>
-  </section>
-
-<section id="grid" class="block"><h2>3 · Unsafe control actions</h2>
-<p>Every control action considered against all four UCA types — <strong>32</strong> cells. A cell resolves as a finding bound to a declared control-structure element, or as a tombstone with a written reason. Both are results; an open cell is not.</p>
-</section>
-<section class="ca">
-      <h3><span class="caid">CA-1</span> issue a session for a member
-        <span class="ctrl">API gateway</span>
-        <span class="cacount">1 finding</span></h3>
-      <div class="tablewrap"><table class="grid">
-        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
-        <tbody><tr class="tombstone">
-          <td class="ttype">Required control never happens</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Unsafe action is performed</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="uca">
-          <td class="ttype">Right action, wrong moment</td>
-          <td><span class="pill pill-uca">UCA</span></td>
-          <td class="tbody">The API gateway mints a session carrying an orgId before membership is confirmed current, leading to H-1 for the token's lifetime.</td>
-          <td class="tmeta"><code>PM-1</code></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong duration</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr></tbody>
-      </table></div>
-    </section><section class="ca">
-      <h3><span class="caid">CA-2</span> serve an invoice to a session
-        <span class="ctrl">Invoice service</span>
-        <span class="cacount">1 finding</span></h3>
-      <div class="tablewrap"><table class="grid">
-        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
-        <tbody><tr class="tombstone">
-          <td class="ttype">Required control never happens</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="uca">
-          <td class="ttype">Unsafe action is performed</td>
-          <td><span class="pill pill-uca">UCA</span></td>
-          <td class="tbody">The invoice service serves an invoice to a session when the session's orgId claim no longer matches the caller's current membership, leading to H-1 (a former member reads an org's invoices).</td>
-          <td class="tmeta"><code>PM-1</code> <code>PM-4</code></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong moment</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong duration</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr></tbody>
-      </table></div>
-    </section><section class="ca">
-      <h3><span class="caid">CA-3</span> serve an invoice by pay-link token
-        <span class="ctrl">Pay-link service</span>
-        <span class="cacount">2 findings</span></h3>
-      <div class="tablewrap"><table class="grid">
-        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
-        <tbody><tr class="tombstone">
-          <td class="ttype">Required control never happens</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="uca">
-          <td class="ttype">Unsafe action is performed</td>
-          <td><span class="pill pill-uca">UCA</span></td>
-          <td class="tbody">The pay-link service serves an invoice when the presenter is anyone who has ever seen the link, including after the customer relationship ends, leading to H-1 (invoice contents disclosed to a non-customer).</td>
-          <td class="tmeta"><code>PM-2</code> <code>F-1</code></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong moment</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="uca">
-          <td class="ttype">Right action, wrong duration</td>
-          <td><span class="pill pill-uca">UCA</span></td>
-          <td class="tbody">The pay-link service keeps honouring a pay-link token indefinitely after the invoice is paid, leading to H-1.</td>
-          <td class="tmeta"><code>PM-2</code></td>
-          <td class="tmeta"></td>
-        </tr></tbody>
-      </table></div>
-    </section><section class="ca">
-      <h3><span class="caid">CA-4</span> modify or void an invoice
-        <span class="ctrl">Invoice service</span>
-        <span class="cacount">0 findings</span></h3>
-      <div class="tablewrap"><table class="grid">
-        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
-        <tbody><tr class="tombstone">
-          <td class="ttype">Required control never happens</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Unsafe action is performed</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong moment</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong duration</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr></tbody>
-      </table></div>
-    </section><section class="ca">
-      <h3><span class="caid">CA-5</span> grant a staff member an impersonation session
-        <span class="ctrl">Support console</span>
-        <span class="cacount">1 finding</span></h3>
-      <div class="tablewrap"><table class="grid">
-        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
-        <tbody><tr class="tombstone">
-          <td class="ttype">Required control never happens</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="uca">
-          <td class="ttype">Unsafe action is performed</td>
-          <td><span class="pill pill-uca">UCA</span></td>
-          <td class="tbody">The support console grants an impersonation session when the staff member has no ticket or consent tying them to that org, leading to H-2 (staff read customer data without a business reason).</td>
-          <td class="tmeta"><code>PM-3</code> <code>F-2</code></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong moment</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong duration</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr></tbody>
-      </table></div>
-    </section><section class="ca">
-      <h3><span class="caid">CA-6</span> remove a member from an org
-        <span class="ctrl">API gateway</span>
-        <span class="cacount">1 finding</span></h3>
-      <div class="tablewrap"><table class="grid">
-        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
-        <tbody><tr class="tombstone">
-          <td class="ttype">Required control never happens</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Unsafe action is performed</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">No context of this action places one org's data in another org's response or in an unintended channel. The action operates within a single org scope that the design derives from the caller, and the derivation itself is examined at CA-2.provided rather than repeated here.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong moment</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="uca">
-          <td class="ttype">Right action, wrong duration</td>
-          <td><span class="pill pill-uca">UCA</span></td>
-          <td class="tbody">The API gateway continues to honour sessions minted before a member was removed, for the remainder of the token lifetime, leading to H-1.</td>
-          <td class="tmeta"><code>PM-1</code></td>
-          <td class="tmeta"></td>
-        </tr></tbody>
-      </table></div>
-    </section><section class="ca">
-      <h3><span class="caid">CA-7</span> send an overdue reminder email
-        <span class="ctrl">Reminder job</span>
-        <span class="cacount">1 finding</span></h3>
-      <div class="tablewrap"><table class="grid">
-        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
-        <tbody><tr class="tombstone">
-          <td class="ttype">Required control never happens</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="uca">
-          <td class="ttype">Unsafe action is performed</td>
-          <td><span class="pill pill-uca">UCA</span></td>
-          <td class="tbody">The reminder job emails an overdue invoice to the address captured at issue time when that address is no longer the customer's, leading to H-1.</td>
-          <td class="tmeta"><code>PM-5</code></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong moment</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong duration</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr></tbody>
-      </table></div>
-    </section><section class="ca">
-      <h3><span class="caid">CA-8</span> dispatch a payment webhook
-        <span class="ctrl">Webhook dispatcher</span>
-        <span class="cacount">1 finding</span></h3>
-      <div class="tablewrap"><table class="grid">
-        <thead><tr><th>UCA type</th><th>State</th><th>Statement / reason</th><th>Binds to</th><th>Hazards</th></tr></thead>
-        <tbody><tr class="tombstone">
-          <td class="ttype">Required control never happens</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">Failing to provide this action withholds service from a legitimate party. That is an availability loss, and this run is bounded to the confidentiality and integrity losses named in 01-scope.md. Recorded as out of hazard, not unexamined — re-run with an availability loss declared to resolve it.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="uca">
-          <td class="ttype">Unsafe action is performed</td>
-          <td><span class="pill pill-uca">UCA</span></td>
-          <td class="tbody">The webhook dispatcher POSTs a payment event when the configured URL points at an internal address, leading to H-3 (internal endpoints reached from inside the trust boundary, and event contents delivered to an unintended host).</td>
-          <td class="tmeta"><code>PM-6</code> <code>F-3</code></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong moment</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">No ordering dependency in this action reaches a hazard state — it neither opens nor consumes a window in which another controller's belief about entitlement is stale. The stale-entitlement window in this design is the session claim, resolved once at CA-1.timing-order.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr><tr class="tombstone">
-          <td class="ttype">Right action, wrong duration</td>
-          <td><span class="pill pill-tomb">no hazard</span></td>
-          <td class="tbody">This action is request-scoped in the design: it completes within one request and establishes no standing grant, so there is no interval over which it can run too long or stop too soon. The two standing grants in this system are the session (CA-6.duration) and the pay link (CA-3.duration), both resolved.</td>
-          <td class="tmeta"></td>
-          <td class="tmeta"></td>
-        </tr></tbody>
-      </table></div>
-    </section>
-
-<section id="scenarios" class="doc"><h2>4 · Loss scenarios</h2><h1>Loss scenarios</h1>
-<p><strong>Part A</strong> — why the unsafe control action occurs. <strong>Part B</strong> — why a <em>correct</em> control action fails to land. Part B is the bypass class, and Step 3 structurally cannot reach it, because in Part B nothing unsafe was ever commanded.</p>
-<p>---</p>
-<h2>S-1 — A removed member keeps reading invoices · CA-2.provided, CA-6.duration, CA-1.timing-order · PM-1, PM-4</h2>
-<p><strong>Part A.</strong> The gateway mints <code>orgId</code> into the token at login and never re-reads it. The invoice service then trusts the header the gateway attaches, so the belief is laundered through two components without either one owning it. Remove a member and the row changes; the token does not. For the rest of the token's lifetime the system serves that member their former org's invoices, and every component involved is behaving exactly as designed.</p>
-<p><strong>Part B.</strong> Re-reading membership on every request fixes the API and does not fix the loss, because <strong>the session is not the only credential that outlives the relationship</strong>. That member has pay links in their inbox (S-2), an export they downloaded last week, and possibly a webhook URL they configured that still points at a host they control (S-3). Revocation that reaches only the session boundary leaves three other paths open — and the design document describes no inventory of what a departing member holds, so nobody can enumerate them.</p>
-<p>---</p>
-<h2>S-2 — The pay link is permanent · CA-3.provided, CA-3.duration · PM-2, F-1</h2>
-<p><strong>Part A.</strong> Entitlement is possession of a UUIDv4 that never rotates and never expires. UUIDv4 is unguessable, so this is not a brute-force finding — it is a <strong>distribution</strong> finding. The token is emailed, which means it lands in a mailbox, a mail archive, a forwarded thread, a shared inbox, a helpdesk ticket, and a browser history. Every one of those is a copy that outlives the payment.</p>
-<p><strong>Part B — the cleanest bypass in this example.</strong> Suppose the token check is perfect. It is <em>still</em> correct to serve the invoice to whoever presents it, because the design defines entitlement as possession. No authorization logic can distinguish the customer from the person the customer forwarded the mail to; the control loop is working exactly as specified and the data leaves anyway. The fix is therefore not in the check — it is in the <strong>lifetime and the binding</strong>: expire the token at payment, rotate on dispute, and require a second factor the customer already has. And with <strong>F-1 absent</strong>, nobody can even measure how often this happens, so there is no evidence to motivate the change.</p>
-<p>---</p>
-<h2>S-3 — The webhook URL is an SSRF primitive · CA-8.provided · PM-6, F-3</h2>
-<p><strong>Part A.</strong> The org types a URL into a settings field and the dispatcher POSTs to it from inside the production network. PM-6 believes the URL is an external endpoint the org controls; nothing establishes either half of that belief. <code>http://169.254.169.254/</code>, <code>http://localhost:6379/</code>, and an internal admin host are all valid strings.</p>
-<p><strong>Part B.</strong> An allow-list on save is the obvious control and it is bypassable without any incorrect control action occurring: <strong>the name resolves at dispatch, not at save.</strong> A hostname that validated cleanly on Tuesday can point at a link-local address on Wednesday — DNS rebinding needs nothing in the request path to malfunction. Validation and use are separated by an interval the design does not close, which is a TOCTOU with a network in the middle. The control has to live at egress — a proxy that resolves and refuses — not at the form.</p>
-<p>---</p>
-<h2>S-4 — Impersonation is invisible · CA-5.provided · PM-3, F-2</h2>
-<p><strong>Part A.</strong> Staff select a member and receive a session acting as them. The document describes no ticket requirement, no consent step, and no scope limit. PM-3 asserts the <code>staff: true</code> claim makes the session distinguishable, but the document names no service that reads it — an assertion with no consumer.</p>
-<p><strong>Part B.</strong> Add the ticket requirement and the loss survives, because <strong>the record is written where the affected party cannot read it</strong>. F-2 does not exist: the member is never notified, and there is no audit surface exposed to the organisation. Internal logging satisfies the auditor and does nothing for the customer — and the customer is the only party with both the motive and the context to spot an impersonation that had a plausible ticket attached to it. Accountability that only points inward is not accountability to the person whose data was read.</p>
-<p>---</p>
-<h2>S-5 — The reminder emails the wrong person · CA-7.provided · PM-5</h2>
-<p><strong>Part A.</strong> The recipient is snapshotted onto the invoice at issue time. An invoice can be overdue for months; contacts change, people leave, addresses get reassigned. The job faithfully mails invoice contents to an address that was correct once.</p>
-<p><strong>Part B.</strong> Reading the current contact at send time fixes the common case and introduces its own: the <em>current</em> contact may be a person who was not party to the original transaction. There is no single correct answer here, which is exactly why it belongs in the design review rather than in a ticket. The finding's real output is a question for the author — <strong>whose invoice is it, the org's or the individual's?</strong> — and the document does not say.</p></section>
-<section id="constraints" class="doc"><h2>5 · Security constraints</h2><h1>Security constraints</h1>
-<div class="tablewrap"><table><thead><tr><th>ID</th><th>Constraint</th><th>Probe</th></tr></thead><tbody><tr><td><strong>SC-1</strong></td><td>An authorization decision MUST NOT rely on an <code>orgId</code> claim without confirming current membership.</td><td>Test: remove a member, then call an invoice route with their pre-removal token → 403.</td></tr><tr><td><strong>SC-2</strong></td><td>A pay-link token MUST NOT remain valid after the invoice is paid or voided.</td><td>Test: pay an invoice, re-fetch by token → 410.</td></tr><tr><td><strong>SC-3</strong></td><td>The invoice service MUST NOT trust an <code>orgId</code> header that a client could set.</td><td>Test: send the header directly, bypassing the gateway → rejected.</td></tr><tr><td><strong>SC-4</strong></td><td>A staff impersonation session MUST NOT be established without a recorded reason visible to the impersonated organisation.</td><td>Assert an org-readable audit row exists for every session with <code>staff: true</code>.</td></tr><tr><td><strong>SC-5</strong></td><td>The webhook dispatcher MUST NOT connect to an address outside the public-internet ranges, resolved <strong>at dispatch time</strong>.</td><td>Test: configure a hostname that resolves to 169.254.169.254 at dispatch → connection refused and logged.</td></tr><tr><td><strong>SC-6</strong></td><td>Pay-link fetches MUST be recorded with source and timestamp.</td><td>Assert a row exists per fetch; alert on N fetches from distinct sources for one invoice.</td></tr></tbody></table></div></section>
+  </div></details></section>
 
 <footer>
 <p>Generated by <strong>stpa</strong> · method: STPA (Leveson &amp; Thomas, <em>STPA Handbook</em>, 2018) with the STPA-Sec security framing (Young &amp; Leveson, <em>CACM</em> 57(2), 2014).
