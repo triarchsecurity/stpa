@@ -219,3 +219,7 @@ The toolkit itself has no dependency on Claude Code, or on any agent. Everything
 MIT — see `LICENSE`.
 
 The method is Nancy Leveson and John Thomas's; the security framing is William Young and Nancy Leveson's. Full citations and the honest list of published limitations are in `METHOD.md`. This toolkit is an independent implementation and is not endorsed by MIT or the STPA authors.
+
+## Field notes
+
+[`FIELD-NOTES.md`](FIELD-NOTES.md) records the observed failure modes each gate exists to catch — read it before deciding a gate is not worth its friction.
