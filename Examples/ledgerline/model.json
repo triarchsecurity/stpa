@@ -152,7 +152,8 @@
           "id": "PM-1",
           "belief": "the orgId in the token is the caller's current org",
           "sourcedFrom": "the JWT claim, minted at login and never re-read",
-          "staleness": "token lifetime \u2014 the review notes say removal does not revoke existing sessions, so this is wrong for exactly as long as a token lives"
+          "staleness": "token lifetime \u2014 the review notes say removal does not revoke existing sessions, so this is wrong for exactly as long as a token lives",
+          "trustRoot": "attacker-input"
         }
       ]
     },
@@ -163,7 +164,8 @@
           "id": "PM-2",
           "belief": "the presenter of a pay-link token is the invoice's customer",
           "sourcedFrom": "possession of a UUIDv4 that never rotates",
-          "staleness": "permanent \u2014 the token outlives the payment, the customer relationship, and any dispute"
+          "staleness": "permanent \u2014 the token outlives the payment, the customer relationship, and any dispute",
+          "trustRoot": "attacker-input"
         }
       ]
     },
@@ -174,7 +176,8 @@
           "id": "PM-3",
           "belief": "an impersonation session is distinguishable from the member's own session",
           "sourcedFrom": "a staff:true claim that downstream services are not documented to read",
-          "staleness": "the belief is asserted, never checked"
+          "staleness": "the belief is asserted, never checked",
+          "trustRoot": "attacker-input"
         }
       ]
     },
@@ -185,7 +188,8 @@
           "id": "PM-4",
           "belief": "the orgId attached by the gateway is authoritative",
           "sourcedFrom": "a header set by an upstream component, trusted without re-derivation",
-          "staleness": "per request, and only as good as PM-1"
+          "staleness": "per request, and only as good as PM-1",
+          "trustRoot": "attacker-input"
         }
       ]
     },
@@ -196,7 +200,8 @@
           "id": "PM-5",
           "belief": "the email address on an overdue invoice is still the right recipient",
           "sourcedFrom": "the invoice row as written at issue time",
-          "staleness": "unbounded \u2014 an invoice can be overdue for months after the contact changed"
+          "staleness": "unbounded \u2014 an invoice can be overdue for months after the contact changed",
+          "trustRoot": "database"
         }
       ]
     },
@@ -207,7 +212,8 @@
           "id": "PM-6",
           "belief": "the configured webhook URL is an external endpoint the org controls",
           "sourcedFrom": "a free-text settings field with no validation described",
-          "staleness": "whatever was last typed"
+          "staleness": "whatever was last typed",
+          "trustRoot": "attacker-input"
         }
       ]
     }

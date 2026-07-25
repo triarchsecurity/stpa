@@ -2,3 +2,6 @@
 *.local.json
 node_modules/
 .DS_Store
+review-scorecard.json
+evidence-gate.json
+control-inventory.json

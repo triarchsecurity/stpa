@@ -23,9 +23,9 @@ These are not style preferences. Each one, broken, degrades the analysis into a 
 
 ## Code
 
-Bun + TypeScript. No runtime dependencies, and that is deliberate — the toolkit must run offline with no API keys, no network calls and no telemetry. A PR that adds a dependency needs to argue for it.
+TypeScript, on **Node or Bun**. No runtime dependencies, and that is deliberate — the toolkit must run offline with no API keys, no network calls and no telemetry. A PR that adds a dependency needs to argue for it, and a PR that adds a Bun-specific or Node-specific API needs to argue harder: the `stpa` CLI dispatches tools to whichever runtime is running it, and that only works while the tools stay runtime-agnostic.
 
-Keep `Tools/*.ts` executable directly (`bun Tools/X.ts`) as well as through the `stpa` CLI.
+Keep `Tools/*.ts` executable directly — `bun Tools/X.ts` **and** `node Tools/X.ts` — as well as through the `stpa` CLI.
 
 ## Filing an issue
 

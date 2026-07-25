@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * stpa — one entry point for the whole toolkit.
  *
@@ -21,12 +21,11 @@
  * Everything is offline. No API keys, no network, no telemetry.
  */
 
-import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+const { spawnSync } = require("node:child_process");
+const { existsSync, mkdirSync, writeFileSync } = require("node:fs");
+const { join, resolve } = require("node:path");
 
-const HERE = dirname(fileURLToPath(import.meta.url));
+const HERE = __dirname;
 const TOOLS = join(HERE, "tools");
 const LEGACY_TOOLS = join(HERE, "Tools"); // tolerate either casing
 const toolDir = existsSync(TOOLS) ? TOOLS : LEGACY_TOOLS;
@@ -89,13 +88,33 @@ if (cmd === "--version" || cmd === "version") {
   process.exit(0);
 }
 
-function run(tool: string, args: string[]): number {
+/**
+ * The tools are TypeScript. Bun runs them natively; Node >=22.18 strips types by
+ * default, and 22.6-22.17 needs --experimental-strip-types. Dispatch to whichever
+ * runtime is executing THIS file, so the child always matches the parent and there
+ * is never a question about which runtime produced an analysis.
+ *
+ * Previously this hardcoded spawnSync("bun", ...), which made Bun a hard install
+ * requirement for a toolkit whose only Bun API call was four lines of dead code.
+ */
+const RUNTIME = (() => {
+  if (process.versions.bun) return { cmd: process.execPath, pre: [] };
+  const [maj, min] = process.versions.node.split(".").map(Number);
+  const stripsByDefault = maj > 22 || (maj === 22 && min >= 18);
+  return { cmd: process.execPath, pre: stripsByDefault ? [] : ["--experimental-strip-types"] };
+})();
+
+function run(tool, args) {
   const p = join(toolDir, tool);
   if (!existsSync(p)) {
     console.error(`missing tool: ${p}`);
     return 1;
   }
-  const r = spawnSync("bun", [p, ...args], { stdio: "inherit" });
+  const r = spawnSync(RUNTIME.cmd, [...RUNTIME.pre, p, ...args], { stdio: "inherit" });
+  if (r.error) {
+    console.error(`could not start ${RUNTIME.cmd}: ${r.error.message}`);
+    return 1;
+  }
   return r.status ?? 1;
 }
 
