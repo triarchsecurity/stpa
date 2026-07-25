@@ -213,7 +213,15 @@ if (inherited.length) {
 // false band-1. Requiring a file:line does not prove the absence, but it forces
 // the author to have opened the file, which is what did not happen.
 const ABSENCE = /\b(no|none|never|nothing|absent|without|unbounded|lacks?|missing|fails? to)\b/i;
-const CITES_CODE = /[\w./-]+\.\w+:\d+/; // path.ext:line — a POSITIVE citation
+const CITES_CODE = /[\w./-]+\.\w+:\d+/; // path.ext:line
+// The evidence standard must match what the analysis was derived FROM. A Modality-B run
+// works from a design document, which has no line numbers, so demanding `file.ts:42`
+// there is impossible by construction — the first version of this check failed the
+// shipped worked example for exactly that reason. When no codebase is among the sources,
+// a document reference IS the evidence.
+const DOC_SOURCED =
+  !((grid?.scope?.sources ?? []) as any[]).some((s: any) => /codebase|repo/i.test(String(s?.type ?? "")));
+const CITES_DOC = /[\w./-]+\.(?:md|markdown|pdf|docx?|rst|adoc|txt)\b/i;
 // An absence has no line number: that is the whole point of it. So a negative search
 // is its own evidence, provided the author says WHAT they searched. `absenceVerifiedBy`
 // satisfies the check when it names a real path (or the grep that swept it) — demanding
@@ -229,7 +237,8 @@ for (const c of findings) {
   const negative = String(r.absenceVerifiedBy ?? "");
   const ok =
     CITES_CODE.test(positive) || // a line was read, or
-    (negative.length > 0 && (NAMES_A_PATH.test(negative) || SWEEP.test(negative))); // a sweep was run
+    (negative.length > 0 && (NAMES_A_PATH.test(negative) || SWEEP.test(negative))) || // a sweep was run, or
+    (DOC_SOURCED && CITES_DOC.test(positive)); // design-doc analysis citing the document
   if (ok) continue;
   unevidenced.push({ id: c.id, snippet: text.slice(0, 90) });
 }
@@ -245,7 +254,9 @@ if (unevidenced.length) {
       "  every hit; read declarations and DEFAULTS, not only uses (`x ?? true` inverts what",
       "  \"not passed\" means); follow the router MOUNT, not only the handler. Then put the",
       "  file:line in `location` — or in `absenceVerifiedBy` if the evidence is a negative",
-      "  search rather than a single line.",
+      "  search rather than a single line. For a design-document analysis (no codebase in",
+      "  scope.sources) a reference to the document itself is sufficient — there is no line",
+      "  to cite, and the document is the evidence.",
       "",
       "  If you cannot cite one, the finding is not verified: mark it provisional or leave",
       "  the cell open. Do not ship it as confirmed.",
