@@ -24,13 +24,34 @@ Use both. This is not a STRIDE replacement — STRIDE is strong exactly where th
 
 ## Install
 
-Requires [Bun](https://bun.sh) (or adapt the shebangs for Node ≥20 with a TS loader).
+Requires [Bun](https://bun.sh). The `Tools/*.ts` files and the `stpa` CLI carry
+`#!/usr/bin/env bun` shebangs, so **without Bun on `PATH` nothing runs** — that is the
+single most common install failure. Node ≥22 can execute the tools if you strip types and
+provide a `Bun` global shim, but Bun is the supported path.
+
+**As a Claude Code skill** — clone into your skills directory. `SKILL.md` carries the
+frontmatter that registers and routes it, so the clone is the whole install:
+
+```bash
+git clone https://github.com/triarchsecurity/stpa.git ~/.claude/skills/triarch-stpa
+chmod +x ~/.claude/skills/triarch-stpa/stpa
+```
+
+Then invoke it by name (`/triarch-stpa`) or just ask for a threat model. A bare invocation
+runs `Workflows/Start.md`, which asks four questions — **which model authors the analysis
+and which independent model attacks it**, what it is working from, how much to cover, and
+what would actually hurt — then runs the whole assessment.
+
+**As a standalone CLI**, with no agent involved:
 
 ```bash
 git clone https://github.com/triarchsecurity/stpa.git && cd stpa
 chmod +x stpa
 ./stpa --help
 ```
+
+Everything is offline: no API keys, no network calls, no telemetry. The CLI does the
+arithmetic and the gates; the judgement is yours either way.
 
 Optionally put it on your PATH:
 
