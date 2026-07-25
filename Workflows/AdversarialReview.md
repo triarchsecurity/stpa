@@ -20,6 +20,22 @@ After the UCA grid and the plan exist, **before** `stpa report` is treated as fi
 4. **STPA validity, not STRIDE regression.** "Would this survive deleting the control structure ('check for XSS')? If yes it is a checklist item, not an STPA finding — refute it."
 5. **Evidence.** "Is the `file:line` real, and does it say what the finding claims? Read it."
 
+6. **Composition — attack the finding SET, not the finding.** This is the duty that was missing, and
+   its absence shipped a real error twice. Ask of every finding rated R2–R4: *"the prerequisite this
+   rating assumes an attacker must already have — does some other finding in this report hand it to
+   them?"* A PTY gated on a staff identity is not R3 when another finding forges arbitrary identities
+   at R0. A bus write that needs a network foothold is not R3 when another finding gives code execution
+   on the box.
+
+   Work from `07-chains.json` (`stpa compose`), and treat a *missing* chain as a question rather than an
+   answer: if a finding requires a capability that nothing in the report grants, either the environment
+   genuinely denies it — say which control — or **the granting finding was never found**, which sends
+   you back to `stpa discover`. In the run this rule comes from, the capability nothing granted was
+   host execution, and the reason was that the PTY that would have granted it was never modelled.
+
+   The reviewer is the right owner for this because the author rated each finding as they wrote it,
+   one at a time, and composition is invisible from inside that loop.
+
 ## The verdict (write to `reviews.json`)
 
 Each finding gets one of: **confirmed** (survives — and for a live one, `reachabilityPath` is *required*), **downgrade** (`newBand` + why — usually reachability was over-rated), **provisional** (`assumption` id it rides on), **refuted** (`reasons` → the author must tombstone it). Also record the `zone`.

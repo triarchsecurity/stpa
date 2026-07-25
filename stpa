@@ -8,7 +8,10 @@
  *   stpa grid <grid.json>         render the grid as markdown
  *   stpa plan [dir]               findings -> ranked, sequenced backlog
  *   stpa report [dir]             the HTML deliverable (default final step)
+ *   stpa link [dir]               clickable file:// link to the report
  *   stpa merge [dir] --expect <m> reconcile parallel plane results (gate)
+ *   stpa discover <repo> [dir]    prove the inventory was multi-modal (gate, BEFORE init)
+ *   stpa compose [dir]            chain findings; re-rate reachability (gate)
  *   stpa scope [dir]              hold the analysis to the scope requested (gate)
  *   stpa run [dir]                plan + report in one go
  *   stpa new [dir]                scaffold a blank analysis directory
@@ -35,7 +38,10 @@ const USAGE = `stpa — control-theoretic threat modeling (STPA) for codebases a
   stpa grid    <grid.json> [-o md]   render the grid as markdown
   stpa plan    [dir] [--check]       findings -> ranked, sequenced backlog
   stpa report  [dir] [-o html]       the HTML deliverable
+  stpa link    [dir] [--copy-to d]   print a clickable file:// link to the report
   stpa merge   [dir] --expect <m>    reconcile parallel plane results (gate)
+  stpa discover <repo> [dir]         prove the inventory was multi-modal (gate, BEFORE init)
+  stpa compose [dir] [--check]       chain findings; re-rate reachability (gate)
   stpa scope   [dir] [--inventory N] hold the analysis to the scope requested (gate)
   stpa run     [dir]                 plan + report in one go
 
@@ -158,6 +164,10 @@ switch (cmd) {
     process.exit(run("UcaGrid.ts", ["markdown", ...rest]));
   case "merge":
     process.exit(run("MergePlanes.ts", rest));
+  case "discover":
+    process.exit(run("DiscoveryGate.ts", rest));
+  case "compose":
+    process.exit(run("ComposeChains.ts", rest));
   case "scope":
     process.exit(run("ScopeGate.ts", rest));
   case "plan":
@@ -166,6 +176,8 @@ switch (cmd) {
     process.exit(run("RenderReport.ts", rest));
   case "verify":
     process.exit(run("VerifyGate.ts", rest));
+  case "link":
+    process.exit(run("ReportLink.ts", rest));
   case "run": {
     const dir = rest[0] ?? ".stpa";
     // Scope contract first. A report that is complete in every other respect but
@@ -183,6 +195,16 @@ switch (cmd) {
       console.error(`   but the report will carry an INCOMPLETE banner and this command will exit`);
       console.error(`   non-zero. A report with no plan tells nobody what to do first.\n`);
     }
+    // Composition. Reachability is not a property of a finding — it is a property of a
+    // finding GIVEN what the others hand the attacker. Run after plan (it needs bands)
+    // and before verify (the reviewer must attack the composed band, not the naive one).
+    const cp = run("ComposeChains.ts", [dir]);
+    if (cp !== 0) {
+      console.error(`\n!! UNRATED COMPOSITION (exit ${cp}). At least one finding's recorded band is softer`);
+      console.error(`   than its composed band — an R3 that some other finding turns into an R0. Set the`);
+      console.error(`   composed reachability and re-run \`stpa plan\`, or record the control that breaks`);
+      console.error(`   the chain. This exact defect shipped once already.\n`);
+    }
     // Adversarial peer-review gate. Output that no independent model has reviewed
     // must not reach a human as final — a model rationalises its own inflation.
     const v = run("VerifyGate.ts", [dir]);
@@ -192,7 +214,12 @@ switch (cmd) {
       console.error(`   non-zero. Run the adversarial-review pass with a different model, then re-run.\n`);
     }
     const r = run("RenderReport.ts", [dir]);
-    process.exit(r !== 0 ? r : sc !== 0 ? sc : v !== 0 ? v : a);
+    // The deliverable's location must be impossible to miss AND clickable. ReportLink
+    // emits a file:// URL (terminals hyperlink those; they do not hyperlink bare paths),
+    // warns that .stpa is hidden from Finder, and — when the run is sandboxed — says so
+    // instead of printing a host path it cannot actually know.
+    if (r === 0) run("ReportLink.ts", [dir]);
+    process.exit(r !== 0 ? r : sc !== 0 ? sc : v !== 0 ? v : cp !== 0 ? cp : a);
   }
   default:
     console.error(`unknown command: ${cmd}\n\n${USAGE}`);
