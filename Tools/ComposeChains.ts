@@ -90,7 +90,13 @@ const argv = process.argv.slice(2);
 const check = argv.includes("--check");
 const depthArg = argv.indexOf("--max-depth");
 const MAX_DEPTH = depthArg !== -1 ? Number(argv[depthArg + 1]) || 4 : 4;
-const dir = resolve(argv.find((a) => !a.startsWith("--") && a !== argv[depthArg + 1]) ?? ".");
+// Guard on depthArg !== -1. Without --max-depth, depthArg is -1 and argv[depthArg + 1]
+// is argv[0] — the positional directory itself — so it was filtered out and dir
+// silently fell back to ".", which is how `stpa run` reported UNRATED COMPOSITION
+// while looking at the wrong directory.
+const dir = resolve(
+  argv.find((a) => !a.startsWith("--") && (depthArg === -1 || a !== argv[depthArg + 1])) ?? ".",
+);
 
 const readJson = (name: string): any => {
   const p = join(dir, name);
