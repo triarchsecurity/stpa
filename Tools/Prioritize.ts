@@ -202,8 +202,62 @@ if (missing.length) {
 if (inherited.length) {
   console.error(`${inherited.length} finding(s) inherited severity/effort from their cluster; ${Object.keys(remed.findings ?? {}).length} set explicitly.`);
 }
+// ── absence claims must cite the code that establishes them ──────────────────
+// A finding whose context asserts a control is MISSING is a claim about the
+// repository, not an inference from the control structure, and it cannot be
+// reasoned to. In one run four such claims were written and all four were false —
+// an image-signature verifier, a session idle timeout, an auth middleware and a
+// config default that inverted the meaning of "not passed". The error is
+// unidirectional: an inferred absence always makes the finding MORE severe, so it
+// inflates the band, survives self-review comfortably, and reaches the owner as a
+// false band-1. Requiring a file:line does not prove the absence, but it forces
+// the author to have opened the file, which is what did not happen.
+const ABSENCE = /\b(no|none|never|nothing|absent|without|unbounded|lacks?|missing|fails? to)\b/i;
+const CITES_CODE = /[\w./-]+\.\w+:\d+/; // path.ext:line — a POSITIVE citation
+// An absence has no line number: that is the whole point of it. So a negative search
+// is its own evidence, provided the author says WHAT they searched. `absenceVerifiedBy`
+// satisfies the check when it names a real path (or the grep that swept it) — demanding
+// file:line for an absence was the first version of this rule and it was incoherent.
+const NAMES_A_PATH = /[\w./-]+\.(ts|js|tsx|jsx|py|go|rb|java|yml|yaml|tf|json|sh|cjs|mjs)\b/i;
+const SWEEP = /\bgrep\b|\brg\b|negative search|no hits|= *0\b/i;
+const unevidenced: { id: string; snippet: string }[] = [];
+for (const c of findings) {
+  const text = String(c.statement ?? "");
+  if (!ABSENCE.test(text)) continue;
+  const r: any = (remed.findings ?? {})[c.id] ?? {};
+  const positive = `${r.location ?? ""} ${r.reachabilityPath ?? ""} ${text}`;
+  const negative = String(r.absenceVerifiedBy ?? "");
+  const ok =
+    CITES_CODE.test(positive) || // a line was read, or
+    (negative.length > 0 && (NAMES_A_PATH.test(negative) || SWEEP.test(negative))); // a sweep was run
+  if (ok) continue;
+  unevidenced.push({ id: c.id, snippet: text.slice(0, 90) });
+}
+if (unevidenced.length) {
+  console.error(
+    `\n!! ${unevidenced.length} finding(s) assert that a control is ABSENT but cite no file:line:\n`,
+  );
+  for (const u of unevidenced) console.error(`   ${u.id}\n     "${u.snippet}..."`);
+  console.error(
+    [
+      "",
+      "  An absence is a claim about code. Grep for the control you say is missing and read",
+      "  every hit; read declarations and DEFAULTS, not only uses (`x ?? true` inverts what",
+      "  \"not passed\" means); follow the router MOUNT, not only the handler. Then put the",
+      "  file:line in `location` — or in `absenceVerifiedBy` if the evidence is a negative",
+      "  search rather than a single line.",
+      "",
+      "  If you cannot cite one, the finding is not verified: mark it provisional or leave",
+      "  the cell open. Do not ship it as confirmed.",
+      "",
+    ].join("\n"),
+  );
+  if (checkOnly) process.exit(1);
+}
+
 if (checkOnly) {
   console.error(`all ${rows.filter(Boolean).length} bound findings have remediation entries`);
+  console.error(`all absence-asserting findings cite code`);
   process.exit(0);
 }
 

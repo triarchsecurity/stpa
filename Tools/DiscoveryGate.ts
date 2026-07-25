@@ -48,9 +48,9 @@ interface Modality {
 }
 
 /**
- * Ten modalities. Every one of these has been, in some real system, the only path to
+ * Eleven modalities. Every one of these has been, in some real system, the only path to
  * a band-1 finding. `http-routes` is first because it is what everyone does; the
- * three marked FORGOTTEN are the ones a route grep structurally cannot see.
+ * four marked FORGOTTEN are the ones a route grep structurally cannot see.
  */
 const MODALITIES: Modality[] = [
   {
@@ -139,6 +139,19 @@ const MODALITIES: Modality[] = [
       /task_role_arn|assume_role_policy|aws_iam_role|AssumeRolePolicyDocument/,
       /internal\s*=\s*(?:false|true)|load_balancer_type|cidr_blocks|SecurityGroupIngress/,
       /BucketPolicy|PolicyDocument|ManagedPolicyArns/,
+    ],
+  },
+  {
+    id: "dynamic-dispatch-route",
+    label: "Parameterised command-dispatch routes  [FORGOTTEN]",
+    why: "a route whose PATH SEGMENT names the operation is a registry, not an endpoint. `app.all('/api/orch/:command')` forwards an arbitrary caller-named command and collapses -- wrongly -- into one REST control action, so the authority of every command it can reach is invisible. In a real run this hid arbitrary SQL, a self-update taking a caller-supplied image, and an in-process eval, through TWO passes and an adversarial review",
+    patterns: [
+      // a route path whose last segment is a bare :param — the operation is data
+      /['"`][^'"`]*\/:(?:command|method|action|op|operation|fn|func|rpc|verb|handler|name)['"`]/i,
+      // app.all / router.all — a verb-agnostic mount is almost always a bridge
+      /^\s*(?:app|router|r|server|api)\s*\.\s*all\s*\(/,
+      // generic forwarders that take the operation by name
+      /\bcall\s*\(\s*(?:req\.params|params)\.\w+/,
     ],
   },
   {

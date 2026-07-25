@@ -78,6 +78,8 @@ Find the contexts in which a legitimate control action becomes hazardous. This i
 
 If your findings could have been written without reading the control structure — "the app might be vulnerable to XSS", "check for SQL injection" — you have regressed to checklist threat modeling. Every UCA must name a specific controller, a specific control action, and a specific context drawn from *this* system's model. Discard any finding that survives the deletion of the model.
 
+**Second guard, and the one that has actually shipped false findings: a UCA whose context asserts that a control is MISSING must be verified in the code before it is written.** Contexts of the form *"when nothing validates X"*, *"when no timeout bounds Y"*, *"when the guard is absent"* are claims about the repository, not inferences from the model, and they cannot be reasoned to. Grep for the control you say is missing and read every hit; read declarations and defaults rather than uses; follow the router mount rather than the handler. Cite the `file:line` that establishes the absence in the cell, and if you cannot, do not write the cell as a finding — mark it provisional or leave it open. **This error is unidirectional: an inferred absence always makes the finding more severe, so it inflates the band, reads plausibly on self-review, and reaches the owner as a false band-1.** In one run four such contexts were written and all four were refuted by a reviewer who opened the files.
+
 ## Handoff
 
 Step 4 (`LossScenarios.md`) takes each UCA and asks *why would this actually happen?*

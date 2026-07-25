@@ -47,10 +47,51 @@ Four questions, then the repo link, then I run the whole thing.
 
 | # | Header | Question | multiSelect |
 |---|---|---|---|
-| 1 | `Method` | Which analysis? — *STPA + STRIDE (recommended)* / *STPA only* / *STRIDE only* | no |
+| 1 | `Models` | Which model authors the analysis, and which one attacks it? | no |
 | 2 | `Inputs` | What am I working from? — *A codebase* / *A design document* | **yes** |
 | 3 | `Scope` | How much of the system should I cover? | no |
 | 4 | `Losses` | What would actually hurt? — in **business** terms | **yes** |
+
+### Q1 — model selection, asked as a PAIRING, not as two questions
+
+**Enumerate the models actually available in the current runtime.** Do not hardcode a roster — it changes,
+and offering a model that cannot be launched wastes a round. Read the available set from the agent-launch
+tool's own model parameter, and include "inherit the session model" as a real option.
+
+**Offer pairings, not individual models.** One question, whose options each name an *author* and a
+*reviewer*:
+
+```
+Strongest authors, different model attacks it  (recommended)
+    e.g. Opus or Fable authors · Sonnet attacks every finding
+Strongest authors and reviews itself           (NOT recommended — say why)
+Cheaper authors, strongest attacks it          (for a bounded triage pass)
+```
+
+The pairing form is deliberate and load-bearing. Asking "which model?" and then "which reviewer?" as
+separate questions lets the same model end up in both slots by inattention, and `stpa verify` then fails
+(exit 4, `authorModel === reviewerModel`) *after* the analysis has already been paid for. Encoding
+independence in the choice makes that unrepresentable.
+
+**What to say about each option, in one clause:**
+
+- **Different-model review is the single highest-value addition to the run.** A model rationalises its own
+  inflation, so a same-model self-check shares the blind spot. On a real run of a 3,600-file monorepo,
+  an Opus-authored analysis reviewed by Sonnet had **22 of 96 findings refuted and 14 downgraded** — 48%
+  corrected. Three of the refutations were the author asserting a security control was *absent* without
+  reading the code that implemented it (an image-signing verifier, a session idle timeout, an auth
+  middleware). No self-review would have found those.
+- **Cross-vendor beats cross-tier.** If two vendors are available, pair across them. If only one family
+  is available, pair across tiers and **record in the report that the review was not cross-vendor** —
+  `AdversarialReview.md` requires that disclosure.
+- **Route by cognitive demand where the runtime allows it.** The UCA grid, the Part-B loss scenarios and
+  the topology-aware rating are where model capability most changes the answer; recon and mechanical
+  passes can go cheaper. The CLI tools are deterministic and use no model at all.
+
+**Record both choices immediately** — `model.json` `scope.analysisModel` and `scope.reviewerModel`, and
+they must match `reviews.json` `authorModel` / `reviewerModel`. A run whose model provenance is not on disk
+cannot state how much to trust itself, and the trust panel in the report is computed from that record
+rather than narrated.
 
 **Depth is no longer a question.** It was one, and the answer never changed the analysis — every
 respondent picks the deepest option, and the shallow ones exist only to look balanced. Discovery depth
@@ -59,21 +100,14 @@ analyst must account for every entry-point modality it finds. Asking someone to 
 is how thoroughness becomes optional. If a run must be time-boxed, that belongs under `Scope`, where
 it is recorded as a contract instead of hidden as a dial.
 
-**Q1 phrasing, and why the recommendation is not neutral.** Offer three real options, and say what each
-costs in one clause:
-
-- **STPA + STRIDE — recommended.** STRIDE enumerates per-element attacker technique; STPA finds the
-  composition/authorization class STRIDE structurally cannot. Together they cross-check each other's
-  coverage, and STRIDE's trust-boundary output seeds the layer whose absence is the top cause of
-  mis-rated findings. Adds roughly 20 minutes to a multi-hour run.
-- **STPA only.** Correct when the target is an authorization architecture, or when a STRIDE model
-  already exists from a previous cycle. You lose the per-element sweep and the two-way coverage check.
-- **STRIDE only.** Available, and say plainly that it is the weakest of the three: it is a per-element
-  technique list, so it will not find broken object-level authorization, tenant bleed at a shared
-  plane, confused-deputy, TOCTOU, or bypass paths — the classes this toolkit exists for. Take it when
-  the ask is a fast design-review checklist against a document, or when someone needs STRIDE output in
-  a specific format for a compliance artifact. **Never silently upgrade it to STPA** — if they picked
-  STRIDE only, deliver STRIDE only, and note in one line what the choice does not cover.
+**STRIDE is no longer part of this skill, and the old `Method` question is gone with it.** A secondary
+per-element pass run by *the same model* that authored the STPA analysis produces a circular cross-check:
+the value of two methods is that they fail differently, and that property comes from independence of the
+reasoner, not from the vocabulary. Standardising the STRIDE output (e.g. via a prompt pattern) does not fix
+it, because the same model still executes the pattern. A genuine dual-method assessment — both halves
+first-class, each independently validated, then synthesised — is a different deliverable and belongs in its
+own skill. Do not offer STRIDE here, and do not bolt an abbreviated version onto an STPA run; it devalues
+both halves and produces a coverage claim that cannot be trusted.
 
 Say plainly under `Scope` that **full surface is a contract**: `ScopeGate` fails the run on
 under-delivery and rejects "didn't get to it" as a deferral reason. Ask `Losses` in business terms —
@@ -104,8 +138,6 @@ If the link has no ref, ask which branch — one line, not a question round. Nev
 | They also selected | Ask for | Then |
 |---|---|---|
 | A design document | file path **or** URL | Fetch or read it before proceeding. Say which you got. |
-
-**If a design document is in the inputs, offer the STRIDE pre-pass — one line, right here.** A design doc is exactly what STRIDE-per-element wants, and its trust-boundary / data-flow / asset output *seeds* the STPA control structure (the trust-boundary layer is the one whose absence most often mis-rates findings). Ask plainly: *"Want me to run a STRIDE pass first and feed it in? — recommended when a design doc exists; it seeds the trust zones and cross-checks coverage."* If yes, run `SeedWithStride.md` before Step 2. If code-only (no design doc), skip it or offer to run it against a short architecture summary you extract.
 
 For a git URL: look for a local checkout first, otherwise clone shallow. **Never switch their checked-out branch — use a worktree.**
 
@@ -177,7 +209,7 @@ A full run is long. Announce each step so nobody wonders whether it hung:
 
 ```
 [1/9] Losses and hazards      [2/9] Control structure + topology
-[3/9] Discovery gate           [4/9] STRIDE seed (if selected)
+[3/9] Discovery gate           [4/9] Trust zones + topology
 [5/9] Unsafe control actions   [6/9] Loss scenarios (Part A + Part B)
 [7/9] Composition              [8/9] Adversarial review
 [9/9] Plan + report

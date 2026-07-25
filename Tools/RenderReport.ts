@@ -738,6 +738,42 @@ const trustPanelHtml = (() => {
   </section>`;
 })();
 
+// §7b — corrections, rendered FROM DATA. Retractions accumulating as prose across five
+// documents is how a corrected analysis becomes less readable than an uncorrected one;
+// this surfaces them once, from corrections.json, so the record is auditable and the
+// narrative stays clean.
+const correctionsHtml = (() => {
+  const raw = read("corrections.json");
+  if (!raw) return "";
+  let doc: any;
+  try {
+    doc = JSON.parse(raw);
+  } catch {
+    return "";
+  }
+  const cs: any[] = doc.corrections ?? [];
+  if (!cs.length) return "";
+  const rank: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  const sorted = [...cs].sort((a, b) => (rank[a.severity] ?? 9) - (rank[b.severity] ?? 9));
+  const rows = sorted
+    .map(
+      (c) => `<div class="corr">
+      <div class="corrhead"><span class="lid">${esc(c.id ?? "")}</span> <span class="band band-${(rank[c.severity] ?? 3) + 1}">${esc(c.severity ?? "")}</span> <span class="muted">caught by</span> <strong>${esc(c.caughtBy ?? "?")}</strong></div>
+      <div class="corrbody">
+        <div><span class="muted">claimed</span> ${esc(c.claimed ?? "")}</div>
+        <div><span class="muted">actual</span> <strong>${esc(c.actual ?? "")}</strong></div>
+        ${c.rootCause ? `<div><span class="muted">why it happened</span> ${esc(c.rootCause)}</div>` : ""}
+        ${Array.isArray(c.appliedTo) && c.appliedTo.length ? `<div><span class="muted">applied to</span> ${c.appliedTo.map((a: string) => `<code>${esc(a)}</code>`).join(" · ")}</div>` : ""}
+      </div>
+    </div>`,
+    )
+    .join("\n");
+  return `<section id="corrections"><details class="fold" open><summary><span class="foldh">7c · Corrections — what this analysis got wrong, and who caught it</span></summary><div class="foldbody">
+  <p class="lede">${sorted.length} correction${sorted.length === 1 ? "" : "s"}, rendered from <code>corrections.json</code> rather than narrated. An analysis that cannot show what it retracted is asking to be trusted on the parts nobody checked.</p>
+  ${rows}
+  </div></details></section>`;
+})();
+
 // §6 — where to focus: 187 findings → a short list of highest-leverage fixes.
 // Full remediation (locations, probes, waves) stays at the end in the plan.
 const focusHtml = (() => {
@@ -1006,10 +1042,14 @@ footer p{margin:0;max-width:74ch}
 details.fold,details.planegroup{background:var(--panel);border:1px solid var(--line);border-radius:13px;margin:16px 0;overflow:hidden}
 details.fold>summary,details.planegroup>summary{cursor:pointer;list-style:none;padding:17px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;user-select:none}
 details.fold>summary::-webkit-details-marker,details.planegroup>summary::-webkit-details-marker{display:none}
-details.fold>summary::before,details.planegroup>summary::before{content:"\25B8";color:var(--muted);font-size:13px;transition:transform .12s ease;flex:none}
+details.fold>summary::before,details.planegroup>summary::before{content:"\\25B8";color:var(--muted);font-size:13px;transition:transform .12s ease;flex:none}
 details[open]>summary::before{transform:rotate(90deg)}
 details.fold>summary:hover .foldh,details.planegroup>summary:hover .foldh{color:var(--accent)}
 .foldh{font-size:16px;font-weight:650}
+.corr{border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:10px 0}
+.corrhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:13px}
+.corrbody>div{margin:5px 0;font-size:14px;line-height:1.5}
+.corrbody .muted{display:inline-block;min-width:104px;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
 .foldbody{padding:2px 24px 20px}
 .foldbody.doc>*:first-child{margin-top:0}
 .pgbody{padding:2px 16px 14px}
@@ -1217,6 +1257,7 @@ ${focusHtml}
 ${section("scenarios", "6 · How it goes wrong — loss scenarios", read("04-scenarios.md"), true)}
 ${section("chains", "6b · How findings chain — composed reachability", read("07-chains.md"), true)}
 ${section("constraints", "7 · What must hold to stop it — security constraints", read("05-constraints.md"))}
+${correctionsHtml}
 
 <section id="grid" class="block"><h2>8 · Unsafe control actions — the full enumeration</h2>
 <p>The exhaustive backing for the scenarios above: every control action considered against all four UCA types — <strong>${grid.totalCells}</strong> cells. A cell resolves as a finding bound to a declared control-structure element, or as a tombstone with a written reason. Both are results; an open cell is not.</p>

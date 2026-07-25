@@ -69,9 +69,22 @@ Build the hierarchical control structure. This is the expensive step and the one
 
    **Then invert it: for each controlled process, list *every* controller that can affect it** — other services, background jobs, operators, shipped tooling, direct datastore access, a second account or role. Two or more controllers over one process with no shared coordination and no shared process model is the *multiple-controller conflict* that canonical STPA Step 3 exists to find, and it is the structural source of the bypass class (Step 4 Part B). If a controlled process has exactly one controller and one path, say so explicitly — single-writer is a strong safety property worth recording. If it has several, that process is a priority for Step 4.
 
-5. **Trace feedback.** For every control action, ask: how does the controller learn the result? Audit log, return value, error response, metric, webhook callback, nothing at all. **Record the absent ones explicitly** — a control action with no feedback path is a finding waiting to happen in Step 4, and it is invisible unless you write the absence down.
+5. **Trace feedback.** For every control action, ask: how does the controller learn the result? Audit log, return value, error response, metric, webhook callback, nothing at all. **Record the absent ones explicitly** — a control action with no feedback path is a finding waiting to happen in Step 4, and it is invisible unless you write the absence down. **But an absence is a claim about code, so verify it before you write `NONE`.** Grep for the channel you are about to declare missing — `grep -rn "audit\|emit\|log\." <the module>` — and read the hits. A run that wrote `F-4: NONE — no post-deploy attestation` was refuted by a reviewer who found a 2-of-N signature verifier with anti-rollback in the same repository. If you cannot cite the negative search, write `NOT VERIFIED` rather than `NONE`; the two are different claims and only one of them is free.
 
 6. **Write the process model for each controller.** The highest-value part of Step 2, and the step the whole method's yield depends on. For each controller, give every belief an ID and record: what it *believes* about system state, *where that belief comes from*, and *how stale it can be*. A guard that believes `role=admin` because a 15-minute JWT said so has a process model that can be wrong for 15 minutes. That interval is a finding generator.
+
+   **Every variable must also name a `trustRoot`, and `stpa evidence` fails without one.** A belief is
+   only as good as the origin its evidence bottoms out in, so record which of these it is:
+   `database` · `iam` · `network` · `human` · `attacker-input` · `unverified`. **"the session", "the
+   token", "config" are hops, not roots** — expand the chain until it terminates. A token bottoms out in
+   whatever verifies it and whichever key does so; if the adversary can obtain that key, the root is
+   `attacker-input` and every control built on that belief is a placebo. This is not bookkeeping: a run
+   credited "roles are re-read from the database every request" as a working control, when two of the
+   three authority helpers actually decrypted the role out of the caller's own token — which invalidated
+   six remediations that all said "gate this on an operator role". `unverified` is a legitimate and useful
+   answer; it forces the dependent band to be provisional instead of silently confident.
+
+      **`staleness` is the field where unverified absence claims hide, so hold it to evidence.** Writing *"FALSE BY CONSTRUCTION — nothing checks this"* is the highest-severity sentence in the whole model and it is frequently wrong. Before writing it: read the **declaration and default**, not only the use (`x ?? true` inverts what "not passed" means); follow the **mount**, not only the handler (Express guards usually live at `app.use(prefix, guard, router)`, far from the route that looks bare); and grep the whole module for the control you say is missing. Cite the `file:line` that establishes the absence. In one run, four `staleness` entries asserting a missing control were all false, and the worst of them was promoted to a band-1 R0 finding and recorded as CONFIRMED.
 
    Skipping or thinning this step is the single most common way an STPA run degrades into a checklist — which is why the tooling refuses to score a grid whose findings do not bind back to these IDs. If Step 2 is thin, Step 3 cannot score, by construction.
 
