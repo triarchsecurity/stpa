@@ -1006,7 +1006,7 @@ footer p{margin:0;max-width:74ch}
 details.fold,details.planegroup{background:var(--panel);border:1px solid var(--line);border-radius:13px;margin:16px 0;overflow:hidden}
 details.fold>summary,details.planegroup>summary{cursor:pointer;list-style:none;padding:17px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;user-select:none}
 details.fold>summary::-webkit-details-marker,details.planegroup>summary::-webkit-details-marker{display:none}
-details.fold>summary::before,details.planegroup>summary::before{content:"\25B8";color:var(--muted);font-size:13px;transition:transform .12s ease;flex:none}
+details.fold>summary::before,details.planegroup>summary::before{content:"\\25B8";color:var(--muted);font-size:13px;transition:transform .12s ease;flex:none}
 details[open]>summary::before{transform:rotate(90deg)}
 details.fold>summary:hover .foldh,details.planegroup>summary:hover .foldh{color:var(--accent)}
 .foldh{font-size:16px;font-weight:650}
