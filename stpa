@@ -8,6 +8,7 @@
  *   stpa grid <grid.json>         render the grid as markdown
  *   stpa plan [dir]               findings -> ranked, sequenced backlog
  *   stpa report [dir]             the HTML deliverable (default final step)
+ *   stpa link [dir]               clickable file:// link to the report
  *   stpa merge [dir] --expect <m> reconcile parallel plane results (gate)
  *   stpa discover <repo> [dir]    prove the inventory was multi-modal (gate, BEFORE init)
  *   stpa compose [dir]            chain findings; re-rate reachability (gate)
@@ -37,6 +38,7 @@ const USAGE = `stpa — control-theoretic threat modeling (STPA) for codebases a
   stpa grid    <grid.json> [-o md]   render the grid as markdown
   stpa plan    [dir] [--check]       findings -> ranked, sequenced backlog
   stpa report  [dir] [-o html]       the HTML deliverable
+  stpa link    [dir] [--copy-to d]   print a clickable file:// link to the report
   stpa merge   [dir] --expect <m>    reconcile parallel plane results (gate)
   stpa discover <repo> [dir]         prove the inventory was multi-modal (gate, BEFORE init)
   stpa compose [dir] [--check]       chain findings; re-rate reachability (gate)
@@ -174,6 +176,8 @@ switch (cmd) {
     process.exit(run("RenderReport.ts", rest));
   case "verify":
     process.exit(run("VerifyGate.ts", rest));
+  case "link":
+    process.exit(run("ReportLink.ts", rest));
   case "run": {
     const dir = rest[0] ?? ".stpa";
     // Scope contract first. A report that is complete in every other respect but
@@ -210,15 +214,11 @@ switch (cmd) {
       console.error(`   non-zero. Run the adversarial-review pass with a different model, then re-run.\n`);
     }
     const r = run("RenderReport.ts", [dir]);
-    // The deliverable's location must be impossible to miss. A relative path in a wall
-    // of tool output is how a finished analysis reads as "no output" — say it loudly,
-    // absolutely, once, at the end.
-    if (r === 0) {
-      const abs = require("node:path").resolve(dir, "REPORT.html");
-      console.error(`\n${"═".repeat(72)}`);
-      console.error(`  REPORT:  ${abs}`);
-      console.error(`${"═".repeat(72)}\n`);
-    }
+    // The deliverable's location must be impossible to miss AND clickable. ReportLink
+    // emits a file:// URL (terminals hyperlink those; they do not hyperlink bare paths),
+    // warns that .stpa is hidden from Finder, and — when the run is sandboxed — says so
+    // instead of printing a host path it cannot actually know.
+    if (r === 0) run("ReportLink.ts", [dir]);
     process.exit(r !== 0 ? r : sc !== 0 ? sc : v !== 0 ? v : cp !== 0 ? cp : a);
   }
   default:

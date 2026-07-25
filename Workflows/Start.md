@@ -234,13 +234,14 @@ stpa scope .stpa --inventory <route count>
 
 **Do not report success on a non-zero exit.** The report will carry a banner saying the scope was not delivered as requested, or that a required section is missing, and it will be right.
 
-End with the artifact's **absolute** path, on its own line, as the first thing in the closing block —
-never a relative path, never buried mid-paragraph, never only inside a tool result:
+End with a **clickable link**, as the first thing in the closing block. `stpa run` calls
+`stpa link` and prints this itself — quote its output verbatim rather than re-deriving a path by hand:
 
 ```
-════════════════════════════════════════════════════════════════════════
-  REPORT:  /abs/path/to/.stpa/REPORT.html
-════════════════════════════════════════════════════════════════════════
+══════════════════════════════════════════════════════════════════════════
+  REPORT   /abs/path/to/.stpa/REPORT.html
+  OPEN     file:///abs/path/to/.stpa/REPORT.html
+══════════════════════════════════════════════════════════════════════════
 
 → Wave 1 is where to start: N items
 → Every item has a file:line and a command that fails now and passes after the fix
@@ -248,10 +249,26 @@ never a relative path, never buried mid-paragraph, never only inside a tool resu
 → Composition: N findings re-rated · Review: independent / NOT REVIEWED
 ```
 
-`stpa run` prints that path block itself, so quote it rather than re-deriving it — and if the analysis
-ran inside a container, say so and give the path *as the user will see it*, since a container path the
-reader cannot open is the same as no path at all. **A user asking "where is the file?" after a
-completed run is a defect in this step, not a question.** It happened; hence the box.
+**A bare path is not a link.** Terminals hyperlink `file://` URLs and do not hyperlink bare paths, so
+the `OPEN` line is what turns "go find this" into one click. That is the whole fix for the common case,
+which is a run on the user's own machine.
+
+**Three failure modes this step has actually produced, each now handled by the tool:**
+
+1. **A relative path.** A finished analysis ended in `.stpa/REPORT.html` and the first question back
+   was *"where is the file?"* **A user asking that after a completed run is a defect here, not a
+   question.**
+2. **A sandbox path presented as a real one.** The follow-up was *"where is that relative to my hard
+   drive?"* — the run was in a VM and `/work/...` did not exist on the reader's machine. When the
+   report sits on a host share (`virtiofs`, `9p`, gRPC-FUSE), the host path is **not knowable from
+   inside**, and `stpa link` says so rather than guessing: a confidently wrong path is worse than an
+   honest unresolved one. It also prints the one `find` command that resolves it, and the
+   `STPA_HOST_MAP="/container=/host"` export that makes every later run clickable. If you are running
+   sandboxed, pass that on — do not paste the inside path as though it were the user's.
+3. **A correct path into a hidden directory.** `.stpa` begins with a dot, so **Finder and most file
+   pickers hide it by default** — a right path that looks missing. `stpa link` flags this and
+   `--copy-to <dir>` drops a visible `STPA-REPORT.html` somewhere obvious. Offer that when the reader
+   is not comfortable in a terminal.
 
 Always give **both** coverage numbers, plus the modality count. Grid coverage without surface coverage
 is how "100%" becomes false assurance — and both of those without the modality count is how a
