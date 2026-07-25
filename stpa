@@ -13,6 +13,8 @@
  *   stpa discover <repo> [dir]    prove the inventory was multi-modal (gate, BEFORE init)
  *   stpa compose [dir]            chain findings; re-rate reachability (gate)
  *   stpa scope [dir]              hold the analysis to the scope requested (gate)
+ *   stpa controls [dir]           cross-check absence claims vs guards the scan found (gate)
+ *   stpa evidence [dir]           trust-root provenance + derived-number consistency (gate)
  *   stpa run [dir]                plan + report in one go
  *   stpa new [dir]                scaffold a blank analysis directory
  *
@@ -43,6 +45,8 @@ const USAGE = `stpa — control-theoretic threat modeling (STPA) for codebases a
   stpa discover <repo> [dir]         prove the inventory was multi-modal (gate, BEFORE init)
   stpa compose [dir] [--check]       chain findings; re-rate reachability (gate)
   stpa scope   [dir] [--inventory N] hold the analysis to the scope requested (gate)
+  stpa controls [dir] [--warn-only]  cross-check absence claims vs found guards (gate)
+  stpa evidence [dir] [--fix-numbers] trust roots + derived-number consistency (gate)
   stpa run     [dir]                 plan + report in one go
 
 Typical first run:
@@ -170,6 +174,10 @@ switch (cmd) {
     process.exit(run("ComposeChains.ts", rest));
   case "scope":
     process.exit(run("ScopeGate.ts", rest));
+  case "controls":
+    process.exit(run("ControlInventory.ts", rest));
+  case "evidence":
+    process.exit(run("EvidenceGate.ts", rest));
   case "plan":
     process.exit(run("Prioritize.ts", rest));
   case "report":
@@ -188,6 +196,23 @@ switch (cmd) {
     if (sc !== 0) {
       console.error(`\n!! SCOPE CONTRACT NOT HONOURED (exit ${sc}). Continuing so you can see the`);
       console.error(`   findings, but this command will exit non-zero and the report will say so.\n`);
+    }
+    // An absence claim that collides with a guard the scan already found is the error
+    // class that shipped four false findings in a real run, one of them band-1. Cheap
+    // to check, and it needs nothing filled in by hand.
+    const ci = run("ControlInventory.ts", [dir]);
+    if (ci !== 0) {
+      console.error(`\n!! ABSENCE CLAIM COLLIDES WITH A FOUND GUARD (exit ${ci}). The scan flagged a control`);
+      console.error(`   in a file some finding calls unguarded. Open the line, then withdraw the finding or`);
+      console.error(`   cite why the guard does not cover that path.\n`);
+    }
+    // Beliefs must terminate in a trust root, and no count the tools compute may be
+    // typed into prose. Both exist because a credited belief and a stale number each
+    // survived to delivery in a real run.
+    const eg = run("EvidenceGate.ts", [dir]);
+    if (eg !== 0) {
+      console.error(`\n!! EVIDENCE GATE FAILED (exit ${eg}). A belief does not name its trust root, or prose`);
+      console.error(`   asserts a count the artifacts contradict. Re-run with --fix-numbers for the latter.\n`);
     }
     const a = run("Prioritize.ts", [dir]);
     if (a !== 0) {
@@ -219,7 +244,7 @@ switch (cmd) {
     // warns that .stpa is hidden from Finder, and — when the run is sandboxed — says so
     // instead of printing a host path it cannot actually know.
     if (r === 0) run("ReportLink.ts", [dir]);
-    process.exit(r !== 0 ? r : sc !== 0 ? sc : v !== 0 ? v : cp !== 0 ? cp : a);
+    process.exit(r !== 0 ? r : sc !== 0 ? sc : ci !== 0 ? ci : eg !== 0 ? eg : v !== 0 ? v : cp !== 0 ? cp : a);
   }
   default:
     console.error(`unknown command: ${cmd}\n\n${USAGE}`);

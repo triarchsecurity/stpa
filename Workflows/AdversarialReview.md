@@ -36,9 +36,26 @@ After the UCA grid and the plan exist, **before** `stpa report` is treated as fi
    The reviewer is the right owner for this because the author rated each finding as they wrote it,
    one at a time, and composition is invisible from inside that loop.
 
+7. **UNDER-rating and inventory gaps — the duty that was missing, and its absence cost two whole control actions.**
+   Every dimension above removes or softens a finding. A reviewer briefed only to refute will therefore
+   only ever shrink the report, and in a real run **0 of 96 verdicts were upgrades** — after which a third
+   model found two unmodelled generic RPC bridges, a systemic authority defect (roles read out of the
+   token), and a seeded super-admin account in every deployment. None of that was a mis-rating; all of it
+   was *absent*. So you owe two more answers:
+
+   - *"What is UNDER-rated?"* Use verdict `upgrade` with `newBand`, on the same evidentiary standard as a
+     downgrade: name the deployed path that makes it worse than recorded.
+   - *"What authority-bearing action is missing from the model entirely?"* Record it as `inventoryGap` on
+     any finding, or as a standalone entry. Look specifically at what a route sweep collapses: a path whose
+     segment NAMES the operation (`/api/:command`) is a registry, not an endpoint, and its authority is the
+     union of everything it dispatches to. `stpa verify` prints a warning when a review returns zero
+     upgrades, because that is a property of the brief rather than evidence the analysis was complete.
+
 ## The verdict (write to `reviews.json`)
 
-Each finding gets one of: **confirmed** (survives — and for a live one, `reachabilityPath` is *required*), **downgrade** (`newBand` + why — usually reachability was over-rated), **provisional** (`assumption` id it rides on), **refuted** (`reasons` → the author must tombstone it). Also record the `zone`.
+Each finding gets one of: **confirmed** (survives — and for a live one, `reachabilityPath` is *required*), **downgrade** (`newBand` + why — usually reachability was over-rated), **upgrade** (`newBand` + the deployed path that makes it worse), **provisional** (`assumption` id it rides on), **refuted** (`reasons` → the author must tombstone it). Also record the `zone`, and `inventoryGap` for anything authority-bearing the model omits.
+
+**Applying a verdict means changing the artifact, and `stpa verify` now enforces that** (exit 7). A refuted finding must be tombstoned; a downgrade or provisional must be stamped in `remediation.json`. This exists because a reviewer once caught two unmodelled RPC bridges and the apply step reverted the correction, so the report went on asserting the opposite while the scorecard claimed the finding had been checked.
 
 ```json
 { "authorModel": "claude-opus-4-8", "reviewerModel": "gpt-5.5",

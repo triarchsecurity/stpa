@@ -24,7 +24,12 @@ Runs Steps 1–4 plus constraint emission against a target. Use when the target 
 
 ## Steps
 
-0. **Optional STRIDE pre-pass — run `SeedWithStride.md` first when a design document exists.** It runs the Fabric `create_stride_threat_model` pattern and folds the result into the STPA inputs: its **trust boundaries** seed the trust-zone layer (the layer whose absence is the top rating error), its **data flows** seed control actions, its **assets** seed controlled processes and cross-check the losses, and its **threat table** enriches the Step-4 scenarios. STRIDE and STPA are complementary — the pre-pass covers the component/technique class STPA under-enumerates while STPA still supplies the emergent/authorization class STRIDE misses. Skip it on a pure code target with no design doc, or run it against a hand-written architecture summary.
+0. **Record the model pairing before anything else.** `Start.md` Q1 captures which model authors the
+   analysis and which independent model attacks it. Write both to `model.json` (`scope.analysisModel`,
+   `scope.reviewerModel`) now — `stpa verify` fails (exit 4) when author and reviewer match, and finding
+   that out after the grid is built wastes the run. **STRIDE is not part of this skill**; a same-model
+   per-element pass produces a circular cross-check, and a genuine dual-method assessment belongs in its
+   own skill.
 
 1. **Run `ScopeAndLosses.md`.** Do not delegate this — the boundary and loss list are the judgment calls the whole analysis rests on, and they need the full context of the conversation with whoever owns the system. If the system's owner is available, this step is a conversation, not an inference.
 
@@ -42,9 +47,6 @@ Runs Steps 1–4 plus constraint emission against a target. Use when the target 
    and an `eval` command that a previous run of the same repo had already found. Add the missing
    control actions to `model.json` now, while adding them is cheap.
 
-   If the user selected **STPA + STRIDE**, run `SeedWithStride.md` here too (its `2b`): the trust
-   boundaries it produces become the trust-zone layer, and that layer is what keeps Step-3 bands from
-   being mis-rated.
 
 3. **Generate the grid, then fan out Step 3 — with a durable delivery contract.**
    ```bash

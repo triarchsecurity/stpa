@@ -98,6 +98,12 @@ const independent = !!(authorModel && reviewerModel && authorModel !== reviewerM
 const liveConfirmed = findings.filter((f) => revMap[f.id]?.verdict === "confirmed" && isLive(f.id));
 const liveWithPath = liveConfirmed.filter((f) => (revMap[f.id]?.reachabilityPath ?? "").trim());
 const provisional = findings.filter((f) => revMap[f.id]?.verdict === "provisional");
+// A review briefed only to refute cannot tell you what you UNDER-rated. In a real run
+// 0 of 96 verdicts were upgrades, and a third model then found two whole unmodelled
+// control actions plus a systemic authority defect. The absence of upgrades is a
+// property of the brief, not evidence that nothing was missed.
+const upgrades = Object.values(revMap).filter((v: any) => v?.verdict === "upgrade").length;
+const inventoryGaps = Object.values(revMap).filter((v: any) => (v?.inventoryGap ?? "").trim()).length;
 
 const scorecard = {
   computedAt: null as string | null,
@@ -114,6 +120,8 @@ const scorecard = {
   liveConfirmed: liveConfirmed.length,
   liveWithReachabilityPath: liveWithPath.length,
   reachabilityPathPct: liveConfirmed.length ? Math.round((liveWithPath.length / liveConfirmed.length) * 100) : 100,
+  upgrades,
+  inventoryGaps,
   trustZonesModeled: Array.isArray(grid.scope?.trustZones) && grid.scope.trustZones.length > 0,
   passed: false as boolean,
 };
@@ -126,6 +134,7 @@ console.log(`  reviewer model:  ${reviewerModel ?? "NOT RECORDED"}${independent 
 console.log(`  reviewed:        ${reviewed.length} / ${total} findings (${scorecard.reviewedPct}%)`);
 console.log(`  verdicts:        ${scorecard.confirmed} confirmed · ${scorecard.downgraded} downgraded · ${scorecard.provisional} provisional · ${scorecard.refuted} refuted`);
 console.log(`  live w/ deployed path: ${liveWithPath.length} / ${liveConfirmed.length} (${scorecard.reachabilityPathPct}%)`);
+console.log(`  upgrades / inventory gaps: ${upgrades} / ${inventoryGaps}`);
 console.log(`  trust zones modeled:   ${scorecard.trustZonesModeled ? "yes" : "NO"}\n`);
 
 if (!reviews) {
@@ -156,6 +165,57 @@ if (missingPath.length) {
   console.error(`!! ${missingPath.length} confirmed-LIVE findings name no deployed reachability path:`);
   for (const f of missingPath.slice(0, 20)) console.error(`   ${f.id}`);
   die(`   a live finding must name the concrete deployed path — code presence is not reachability.`, 6);
+}
+
+// ── the apply step must actually apply. A verdict the report does not reflect is the
+// exact failure AdversarialReview.md warns about, and it happened: a reviewer caught two
+// unmodelled RPC bridges and the apply step reverted the correction, so the report went
+// on asserting the opposite. The contract is that applying a verdict STAMPS it.
+const stamps = readJson("remediation.json");
+const notApplied: string[] = [];
+for (const f of findings) {
+  const v: any = revMap[f.id];
+  if (!v) continue;
+  const r: any = (stamps?.findings ?? {})[f.id] ?? {};
+  if (v.verdict === "refuted") notApplied.push(`${f.id}: refuted but still a live finding (tombstone it)`);
+  else if (v.verdict === "downgrade" && r.reviewVerdict !== "downgrade")
+    notApplied.push(`${f.id}: downgraded to band ${v.newBand} but remediation.json carries no reviewVerdict`);
+  else if (v.verdict === "provisional" && !r.provisional && r.reviewVerdict !== "provisional")
+    notApplied.push(`${f.id}: provisional but not tagged in remediation.json`);
+}
+if (notApplied.length) {
+  console.error(`!! ${notApplied.length} review verdict(s) are NOT reflected in the analysis:`);
+  for (const n of notApplied.slice(0, 25)) console.error(`   ${n}`);
+  die(
+    [
+      "",
+      "   Applying a verdict means changing the artifact, not filing the verdict. A finding the",
+      "   review corrected but the report still shows uncorrected is worse than an unreviewed one,",
+      "   because the scorecard claims it was checked.",
+      "",
+      "   refuted -> tombstone the cell · downgrade -> set reviewVerdict + the new band",
+      "   provisional -> tag `provisional` and the assumption it rides on",
+    ].join("\n"),
+    7,
+  );
+}
+
+if (upgrades === 0 && reviewed.length >= 20) {
+  console.error(
+    [
+      "!! ZERO UPGRADES in " + reviewed.length + " verdicts — the review was one-directional.",
+      "",
+      "   A reviewer told only to refute will only ever remove findings. It cannot tell you what",
+      "   you under-rated or what is missing from the inventory entirely, and in a real run a",
+      "   third model then found two unmodelled control actions and a systemic authority defect",
+      "   that the 96-verdict review had no duty to look for.",
+      "",
+      "   Not a failure — the review still stands. But treat the finding set as UNBOUNDED ABOVE,",
+      "   and brief the next reviewer with the upgrade duty (AdversarialReview.md dimension 7):",
+      "   `upgrade` as a verdict, and `inventoryGap` for an authority-bearing action nobody modelled.",
+      "",
+    ].join("\n"),
+  );
 }
 
 scorecard.passed = true;
