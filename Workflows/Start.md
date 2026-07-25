@@ -47,14 +47,39 @@ Four questions, then the repo link, then I run the whole thing.
 
 | # | Header | Question | multiSelect |
 |---|---|---|---|
-| 1 | `Inputs` | What am I working from? — *A codebase* / *A design document* | **yes** |
-| 2 | `Scope` | How much of the system should I cover? | no |
-| 3 | `Depth` | How deep should the code scan go? | no |
+| 1 | `Method` | Which analysis? — *STPA + STRIDE (recommended)* / *STPA only* / *STRIDE only* | no |
+| 2 | `Inputs` | What am I working from? — *A codebase* / *A design document* | **yes** |
+| 3 | `Scope` | How much of the system should I cover? | no |
 | 4 | `Losses` | What would actually hurt? — in **business** terms | **yes** |
 
-**Do not ask for the org, and do not enumerate repos.** An earlier design asked org → repo → branch as selectable options and failed three times in a row, each differently, always with the repo question disappearing. **The link carries the org, the repo and often the branch in one string the user can paste from their address bar.** That is faster to answer than any list, works for orgs and hosts you cannot enumerate, and cannot lose a question between rounds.
+**Depth is no longer a question.** It was one, and the answer never changed the analysis — every
+respondent picks the deepest option, and the shallow ones exist only to look balanced. Discovery depth
+is now a *gate* (`stpa discover`), not a preference: the sweep runs at full depth always, and the
+analyst must account for every entry-point modality it finds. Asking someone to opt into thoroughness
+is how thoroughness becomes optional. If a run must be time-boxed, that belongs under `Scope`, where
+it is recorded as a contract instead of hidden as a dial.
 
-Say plainly under `Scope` that **full surface is a contract**: `ScopeGate` fails the run on under-delivery and rejects "didn't get to it" as a deferral reason. Ask `Losses` in business terms — losses are a business judgment, and security vocabulary produces security-shaped answers.
+**Q1 phrasing, and why the recommendation is not neutral.** Offer three real options, and say what each
+costs in one clause:
+
+- **STPA + STRIDE — recommended.** STRIDE enumerates per-element attacker technique; STPA finds the
+  composition/authorization class STRIDE structurally cannot. Together they cross-check each other's
+  coverage, and STRIDE's trust-boundary output seeds the layer whose absence is the top cause of
+  mis-rated findings. Adds roughly 20 minutes to a multi-hour run.
+- **STPA only.** Correct when the target is an authorization architecture, or when a STRIDE model
+  already exists from a previous cycle. You lose the per-element sweep and the two-way coverage check.
+- **STRIDE only.** Available, and say plainly that it is the weakest of the three: it is a per-element
+  technique list, so it will not find broken object-level authorization, tenant bleed at a shared
+  plane, confused-deputy, TOCTOU, or bypass paths — the classes this toolkit exists for. Take it when
+  the ask is a fast design-review checklist against a document, or when someone needs STRIDE output in
+  a specific format for a compliance artifact. **Never silently upgrade it to STPA** — if they picked
+  STRIDE only, deliver STRIDE only, and note in one line what the choice does not cover.
+
+Say plainly under `Scope` that **full surface is a contract**: `ScopeGate` fails the run on
+under-delivery and rejects "didn't get to it" as a deferral reason. Ask `Losses` in business terms —
+losses are a business judgment, and security vocabulary produces security-shaped answers.
+
+**Do not ask for the org, and do not enumerate repos.** An earlier design asked org → repo → branch as selectable options and failed three times in a row, each differently, always with the repo question disappearing. **The link carries the org, the repo and often the branch in one string the user can paste from their address bar.** That is faster to answer than any list, works for orgs and hosts you cannot enumerate, and cannot lose a question between rounds.
 
 **Never hand-write a "Type it" / "Other" option.** `AskUserQuestion` appends its own free-text escape automatically. A hand-made one returns its own label as the answer — you learn nothing and the flow stalls into prose. Every option must be a real value.
 
@@ -101,7 +126,8 @@ This is provenance, and it is the difference between "we threat modeled it" and 
 
 ### 3d. Record the scope contract — FIRST WRITE, before any analysis
 
-Their Q2 answer is a **contract**, not a preference. Write it into `model.json` immediately:
+Their `Scope` answer is a **contract**, not a preference. Write it into `model.json` immediately
+(along with their `Method` answer, so the report states which methods were run):
 
 ```json
 "scope": {
@@ -135,7 +161,7 @@ Always include the honest escape: **"not sure — infer from the infra and mark 
 
 ```
 Three things only you can supply. I'll draft each and you correct me:
-  1. Losses      — from your Q4 answers
+  1. Losses      — from your `Losses` answers
   2. Hazards     — system states that lead to them (NOT attacker actions)
   3. Process models — what each component BELIEVES, where the belief comes
                       from, how stale it can be   ← most findings come from here
@@ -150,11 +176,51 @@ Then **run it**. Do not stop and ask for permission to begin — they already an
 A full run is long. Announce each step so nobody wonders whether it hung:
 
 ```
-[1/6] Losses and hazards    [2/6] Control structure   [3/6] Unsafe control actions
-[4/6] Loss scenarios        [5/6] Constraints         [6/6] Plan + report
+[1/9] Losses and hazards      [2/9] Control structure + topology
+[3/9] Discovery gate           [4/9] STRIDE seed (if selected)
+[5/9] Unsafe control actions   [6/9] Loss scenarios (Part A + Part B)
+[7/9] Composition              [8/9] Adversarial review
+[9/9] Plan + report
 ```
 
-Follow `FullAnalysis.md` (or `QuickTriage.md` for a PR). Their Q2 answer becomes the scan `--focus`; Q3 becomes `--depth`; Q4 becomes the loss list in `01-scope.md`.
+Follow `FullAnalysis.md` (or `QuickTriage.md` for a PR). Their `Scope` answer becomes the scan
+`--focus`; `Losses` becomes the loss list in `01-scope.md`.
+
+**Three steps are new, and each exists because a real run failed without it. None is skippable.**
+
+- **`[3/9]` Discovery gate — runs BEFORE `stpa init`, and this ordering is the whole point.**
+  ```bash
+  stpa discover <repo> .stpa --check
+  ```
+  A grid cannot be initialized against an inventory that was never audited, because coverage is
+  computed over the inventory: build it from one search shape and the report earns a truthful,
+  meaningless 100%. The gate sweeps ten entry-point modalities and fails (exit 7) on any modality with
+  hits that is neither mapped to a control action nor ruled out with a reason. **Three of the ten are
+  marked FORGOTTEN** — non-HTTP entry points, in-process command registries, and dynamic-execution
+  primitives — because those are the shapes a route sweep structurally cannot see, and in a real run
+  they hid an interactive PTY and an `eval` command that a *previous* run of the same target had found.
+  If a modality is genuinely outstanding, leave it unmapped and let the gate stay red: a red gate that
+  names the hole beats a green one that hides it.
+
+- **`[7/9]` Composition.**
+  ```bash
+  stpa compose .stpa --check
+  ```
+  Reachability is not a property of a finding; it is a property of a finding *given what the other
+  findings hand the attacker*. Declare `grants` and `requires` on every band-1/2 finding and let the
+  tool recompute. It exists because two independent runs each rated a PTY-over-WebSocket at R3
+  ("needs a staff identity") while separately rating token forgery at R0 — and neither noticed that
+  one finding *is* the prerequisite for the other. Exit 6 means a recorded band is softer than the
+  composed one; fix the band or record the control that breaks the chain.
+
+- **`[8/9]` Adversarial review — `AdversarialReview.md`, with a different model.** Not a courtesy.
+  `stpa verify` refuses to certify and the report carries a NOT-PEER-REVIEWED banner without it.
+
+**Produce the final artifact with `stpa run` and nothing else.** Calling `RenderReport.ts` (or
+`stpa report`) directly renders a report while silently bypassing the scope, plan, composition and
+peer-review gates — which is exactly how a run once presented an ungated report as final. `stpa run`
+chains all four, prints the banner when one fails, and exits non-zero. If you find yourself reaching
+for the individual tool to "just see the output", that is the moment the gates were for.
 
 **If you fan out to parallel agents, the delivery contract is non-negotiable** — write a `manifest.json` first, have delegates `Write` to `.stpa/planes/<name>.json`, and gate with `stpa merge --expect`. Delegates that return payloads as messages fail silently; see the SKILL.md gotcha.
 
@@ -168,16 +234,28 @@ stpa scope .stpa --inventory <route count>
 
 **Do not report success on a non-zero exit.** The report will carry a banner saying the scope was not delivered as requested, or that a required section is missing, and it will be right.
 
-End with:
+End with the artifact's **absolute** path, on its own line, as the first thing in the closing block —
+never a relative path, never buried mid-paragraph, never only inside a tool result:
 
 ```
-→ .stpa/REPORT.html    open in any browser (self-contained, works offline)
+════════════════════════════════════════════════════════════════════════
+  REPORT:  /abs/path/to/.stpa/REPORT.html
+════════════════════════════════════════════════════════════════════════
+
 → Wave 1 is where to start: N items
 → Every item has a file:line and a command that fails now and passes after the fix
-→ Coverage: X% of the grid, Y% of the system
+→ Coverage: X% of the grid, Y% of the system, Z of 10 discovery modalities accounted for
+→ Composition: N findings re-rated · Review: independent / NOT REVIEWED
 ```
 
-Always give **both** coverage numbers. One without the other is how "100%" becomes a false assurance.
+`stpa run` prints that path block itself, so quote it rather than re-deriving it — and if the analysis
+ran inside a container, say so and give the path *as the user will see it*, since a container path the
+reader cannot open is the same as no path at all. **A user asking "where is the file?" after a
+completed run is a defect in this step, not a question.** It happened; hence the box.
+
+Always give **both** coverage numbers, plus the modality count. Grid coverage without surface coverage
+is how "100%" becomes false assurance — and both of those without the modality count is how a
+single-modality inventory passes for a full one.
 
 ## Anti-patterns
 

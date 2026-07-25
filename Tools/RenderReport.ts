@@ -290,6 +290,7 @@ const SECTIONS: { file: string; label: string; why: string; weight: "core" | "su
   { file: "01-scope.md", label: "Scope, losses and hazards", why: "without it, findings have nothing to be severe *about*", weight: "core" },
   { file: "02-control-structure.md", label: "Control structure", why: "the diagram and process-model tables readers need to check the reasoning", weight: "core" },
   { file: "04-scenarios.md", label: "Loss scenarios", why: "why each finding occurs (Part A) and why a CORRECT control action fails to land (Part B — the bypass class, which Step 3 structurally cannot find). This is where mitigations come from", weight: "core" },
+  { file: "07-chains.md", label: "Composition", why: "reachability is a property of a finding GIVEN what the others grant an attacker — without it an R0 chain ships rated R3. Run `stpa compose`", weight: "core" },
   { file: "05-constraints.md", label: "Security constraints", why: "the MUST-NOT assertions and probes that make findings testable", weight: "core" },
   { file: "06-remediation.json", label: "Engineering plan", why: "severity, effort, file locations, root causes and waves — run `stpa plan`", weight: "core" },
 ];
@@ -1214,6 +1215,7 @@ ${atStakeHtml}
 ${focusHtml}
 
 ${section("scenarios", "6 · How it goes wrong — loss scenarios", read("04-scenarios.md"), true)}
+${section("chains", "6b · How findings chain — composed reachability", read("07-chains.md"), true)}
 ${section("constraints", "7 · What must hold to stop it — security constraints", read("05-constraints.md"))}
 
 <section id="grid" class="block"><h2>8 · Unsafe control actions — the full enumeration</h2>

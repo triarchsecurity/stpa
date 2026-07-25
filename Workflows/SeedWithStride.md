@@ -13,10 +13,55 @@ STRIDE is applied *per element* over a data-flow model — components, the flows
 
 Either way the destination is the same; the only question is whether you already have a model or must extract one from the code first.
 
+## Settled: where STRIDE goes, and how many times each method runs
+
+This was an open question and it is now decided, because two facts close it.
+
+**One.** STRIDE-per-element needs a *model* — components, flows, boundaries. On a code target the only
+model that exists is the STPA control structure. So STRIDE cannot precede Step 2; there is nothing for
+it to enumerate against.
+
+**Two.** STRIDE's most valuable output for STPA is the **trust-boundary layer**, and that layer is
+consumed at *rating* time — Steps 3 and 4 — not at modeling time.
+
+Therefore: **one STRIDE pass, positioned immediately after Step 2, whose output is consumed at two
+points.** Not STRIDE twice, and not STRIDE first.
+
+```
+1 losses/hazards → 2 control structure + topology → 2b STRIDE over that structure
+  → 3 UCA grid → 4 scenarios → 4c compose → 5 constraints
+  → 6 adversarial review → 6b STRIDE reconciliation → 7 plan + report
+```
+
+`2b` seeds (boundaries → zones, flows → control actions, assets → controlled processes).
+`6b` reconciles (every STRIDE threat maps to a UCA or is recorded out-of-scope; every STPA finding
+STRIDE could not have produced is named, because that is the return on running STPA at all).
+Same single artifact, read twice. Running the *pattern* twice buys nothing; skipping the
+reconciliation loses the coverage cross-check, which is most of the value.
+
+**And STPA does not run twice either.** The temptation to re-run STPA comes from discovering, late,
+that the inventory was incomplete — which re-running the same discovery will not fix. That is what
+`stpa discover` is for, and it gates *before* the grid exists. When the inventory legitimately grows
+mid-run (a new modality accounted for, a controller hand-added), do not restart: `stpa init
+model-v2.json --merge grid.json` carries every resolved cell forward and lists only the genuinely new
+ones. Re-entry, not repetition.
+
+**When the design doc exists, the shape is unchanged** — the doc simply gives Step 2 a running start,
+and STRIDE still runs at `2b` against the control structure the doc informed. The only thing a design
+doc changes is how much of Step 2 you had to derive from code.
+
 ## When to use
 
-- **Before Step 2**, whenever a design document exists (STRIDE-per-element wants a design doc / architecture). It gives the control-structure modeling a running start and a trust-zone layer.
-- **As a completeness cross-check on a finished STPA run** — every STRIDE threat should map to a UCA/scenario here, or be explicitly out of scope. Unmapped STRIDE threats are either a missed control action or a pure component failure outside STPA's frame; both are worth recording.
+- **At `2b` of every run where the user selected STPA + STRIDE** (the recommended intake default).
+- **At `6b` of that same run**, as the coverage reconciliation. Not optional — it is the half that
+  catches misses.
+- **Standalone**, when the user explicitly selected *STRIDE only* at intake. Deliver the STRIDE model
+  and threat table, and state in one line what the choice does not cover (broken object-level authz,
+  tenant bleed at a shared plane, confused-deputy, TOCTOU, bypass paths). Do not quietly run STPA
+  anyway.
+- **As a completeness cross-check on an already-finished STPA run** — the case where a report exists
+  and you want to know what it missed. This is `6b` run in isolation, and it is a cheap, high-yield way
+  to audit a previous cycle's output.
 
 ## Steps
 

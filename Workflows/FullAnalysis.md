@@ -30,6 +30,22 @@ Runs Steps 1–4 plus constraint emission against a target. Use when the target 
 
 2. **Run `ModelControlStructure.md`.** Start with `stpa scan`, then do the human work of step 2 (invisible controllers) and step 6 (process models). Modality A, B, or both.
 
+2b. **Gate the inventory BEFORE the grid exists. Do not skip to `init`.**
+   ```bash
+   stpa discover <repo> .stpa --check      # exit 7 = a modality has hits and no owner
+   ```
+   Coverage is computed over the inventory, so an inventory built from one search shape produces a
+   truthful, meaningless 100%. This gate sweeps ten entry-point modalities and refuses to pass while
+   any of them has hits but is neither mapped to a control action nor ruled out with a reason. The
+   three marked **FORGOTTEN** — non-HTTP entry points, in-process command registries, dynamic
+   execution — are the ones a route sweep cannot see; in a real run they concealed a PTY-over-WebSocket
+   and an `eval` command that a previous run of the same repo had already found. Add the missing
+   control actions to `model.json` now, while adding them is cheap.
+
+   If the user selected **STPA + STRIDE**, run `SeedWithStride.md` here too (its `2b`): the trust
+   boundaries it produces become the trust-zone layer, and that layer is what keeps Step-3 bands from
+   being mis-rated.
+
 3. **Generate the grid, then fan out Step 3 — with a durable delivery contract.**
    ```bash
    stpa init model.json -o grid.json
@@ -72,6 +88,18 @@ Runs Steps 1–4 plus constraint emission against a target. Use when the target 
    Parallelizable per UCA, but scenarios benefit from cross-UCA visibility — the bypass class is usually found by noticing that two different UCAs share a controlled process. **Batch by controlled process, not by UCA**, and for each one ask explicitly: *what else writes this?*
 
    Write `04-scenarios.md`. `RenderReport.ts` treats it as a required section and exits 5 without it.
+
+6b. **Compose. Rate the finding set, not the findings.**
+   ```bash
+   stpa compose .stpa --check              # exit 6 = a recorded band is softer than the composed one
+   ```
+   Declare `grants` and `requires` on every band-1/2 finding — what capability it hands an attacker,
+   and what it assumes they already hold — and let the tool propagate reachability transitively. This
+   step exists because two separate runs each rated a shell-over-WebSocket at R3 ("needs a staff
+   identity") while separately rating identity forgery at R0, and neither composed them. A chain that
+   *fails* to close is also information: if nothing grants a capability some finding requires, either
+   name the control that denies it or go back to `stpa discover`, because the granting finding may
+   simply not have been found.
 
 7. **Run `SecurityConstraints.md`.** Emit `MUST NOT` assertions with probes, and land them wherever your build already looks — a test file is the durable home.
 
