@@ -24,10 +24,13 @@ Use both. This is not a STRIDE replacement — STRIDE is strong exactly where th
 
 ## Install
 
-Requires [Bun](https://bun.sh). The `Tools/*.ts` files and the `stpa` CLI carry
-`#!/usr/bin/env bun` shebangs, so **without Bun on `PATH` nothing runs** — that is the
-single most common install failure. Node ≥22 can execute the tools if you strip types and
-provide a `Bun` global shim, but Bun is the supported path.
+**Runs on Node or Bun — no other prerequisites.** The `stpa` CLI dispatches every tool to
+whichever runtime is executing it, so `./stpa` uses Node (≥22.6; types are stripped
+natively from 22.18, and the flag is passed automatically below that) and `bun stpa` uses
+Bun. There are no Bun-specific APIs anywhere in the toolkit.
+
+Everything is offline either way: no API keys, no network calls, no telemetry. Nothing is
+downloaded at install or at analysis time.
 
 **As a Claude Code skill** — clone into your skills directory. `SKILL.md` carries the
 frontmatter that registers and routes it, so the clone is the whole install:

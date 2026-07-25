@@ -71,7 +71,22 @@ function readJson(name: string, required = true): any {
   }
 }
 
+const gridForSources = readJson("grid.json", false) ?? readJson("model.json", false) ?? {};
+const CODE_SOURCED = ((gridForSources?.scope?.sources ?? []) as any[]).some((s: any) =>
+  /codebase|repo/i.test(String(s?.type ?? "")),
+);
+
 const cands = readJson("candidates.json", false);
+// A Modality-B analysis works from a design document: there is no code scan, so there is
+// nothing to collide with and nothing to skip past. Passing here is correct rather than
+// lenient. The gate still HARD-FAILS a codebase analysis with no scan, because that is
+// the case where every absence claim is unfalsifiable.
+if (!cands && !CODE_SOURCED) {
+  console.log(`control inventory — ${dir}\n`);
+  console.log("  no codebase in scope.sources and no candidates.json — design-document");
+  console.log("  analysis, so there are no guard candidates to cross-check. Skipped.");
+  process.exit(0);
+}
 if (!cands) {
   console.error(
     [

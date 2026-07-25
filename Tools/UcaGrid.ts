@@ -159,14 +159,12 @@ function usage(): never {
 }
 
 function readJson(path: string): unknown {
-  const f = Bun.file(path);
   let text: string;
   try {
     text = require("node:fs").readFileSync(path, "utf8");
   } catch {
     die(`cannot read: ${path}`);
   }
-  void f;
   try {
     return JSON.parse(text);
   } catch (e) {
