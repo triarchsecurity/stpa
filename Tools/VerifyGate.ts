@@ -16,7 +16,7 @@
  * and refuses to pass if it is missing, self-reviewed, or incomplete.
  *
  * Usage:
- *   bun VerifyGate.ts <analysis-dir> [--warn-only]
+ *   stpa verify <analysis-dir> [--warn-only]
  *
  * reviews.json (written by the adversarial-review pass):
  *   {
@@ -47,7 +47,7 @@ if (argv.includes("--help") || argv.includes("-h")) {
     [
       "VerifyGate.ts — adversarial peer-review gate",
       "",
-      "Usage: bun VerifyGate.ts <analysis-dir> [--warn-only]",
+      "Usage: stpa verify <analysis-dir> [--warn-only]",
       "",
       "Refuses to certify an analysis unless every UCA finding was reviewed by an",
       "INDEPENDENT model and every confirmed-live finding names a deployed path.",

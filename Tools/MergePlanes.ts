@@ -28,8 +28,8 @@
  * of what showed up.
  *
  * Usage:
- *   bun MergePlanes.ts <analysis-dir> --expect <manifest.json>   # merge + gate
- *   bun MergePlanes.ts <analysis-dir> --expect <manifest.json> --check
+ *   stpa merge <analysis-dir> --expect <manifest.json>   # merge + gate
+ *   stpa merge <analysis-dir> --expect <manifest.json> --check
  *
  * manifest.json — written BEFORE dispatch, from the control-action inventory:
  *   { "planes": { "auth": { "file": "planes/auth.json",
@@ -91,7 +91,7 @@ if (argv.includes("--help") || argv.includes("-h"))
     [
       "MergePlanes.ts — reconciliation gate for parallel STPA analysis",
       "",
-      "Usage: bun MergePlanes.ts <analysis-dir> --expect <manifest.json> [--check]",
+      "Usage: stpa merge <analysis-dir> --expect <manifest.json> [--check]",
       "",
       "Refuses to merge until every expected plane file exists and every expected",
       "cell is present or explicitly declared incomplete. Exit 4 = gap detected.",

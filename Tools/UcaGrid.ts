@@ -10,12 +10,12 @@
  * cells. An unresolved cell is a hole in the analysis, and now you can count them.
  *
  * Usage:
- *   bun UcaGrid.ts init    <model.json> [-o grid.json]   # generate the empty grid
- *   bun UcaGrid.ts init    <model.json> --merge <old-grid.json> -o grid.json
+ *   stpa init    <model.json> [-o grid.json]   # generate the empty grid
+ *   stpa init    <model.json> --merge <old-grid.json> -o grid.json
  *                                                        # re-analysis: carry resolved
  *                                                        # cells forward, list only new ones
- *   bun UcaGrid.ts status  <grid.json>                   # coverage report
- *   bun UcaGrid.ts markdown <grid.json> [-o grid.md]     # analyst-facing checklist
+ *   stpa status  <grid.json>                   # coverage report
+ *   stpa grid <grid.json> [-o grid.md]     # analyst-facing checklist
  *
  * Input model.json shape (produced by ModelControlStructure workflow):
  *   {
@@ -52,6 +52,8 @@
  *
  * Coverage = (bound findings + reasoned tombstones) / total cells.
  */
+
+import { readFileSync, writeFileSync } from "node:fs";
 
 const UCA_TYPES = [
   { key: "not-provided", label: "Not providing causes hazard" },
@@ -133,7 +135,7 @@ function die(msg: string, code = 1): never {
 /** Write through die() rather than letting a bad path dump a raw stack trace. */
 function writeOut(path: string, content: string, note: string): void {
   try {
-    require("node:fs").writeFileSync(path, content);
+    writeFileSync(path, content);
   } catch (e) {
     die(`cannot write ${path}: ${(e as Error).message}`);
   }
@@ -146,9 +148,9 @@ function usage(): never {
       "UcaGrid.ts — STPA Step 3 coverage grid",
       "",
       "Usage:",
-      "  bun UcaGrid.ts init     <model.json>  [--merge <old-grid.json>] [-o <grid.json>]",
-      "  bun UcaGrid.ts status   <grid.json>",
-      "  bun UcaGrid.ts markdown <grid.json>   [-o <grid.md>]",
+      "  stpa init     <model.json>  [--merge <old-grid.json>] [-o <grid.json>]",
+      "  stpa status   <grid.json>",
+      "  stpa grid <grid.json>   [-o <grid.md>]",
       "",
       "Cell states: open | uca | tombstone (tombstone requires a `reason`).",
       "Coverage = (BOUND findings + reasoned tombstones) / totalCells.",
@@ -161,7 +163,7 @@ function usage(): never {
 function readJson(path: string): unknown {
   let text: string;
   try {
-    text = require("node:fs").readFileSync(path, "utf8");
+    text = readFileSync(path, "utf8");
   } catch {
     die(`cannot read: ${path}`);
   }

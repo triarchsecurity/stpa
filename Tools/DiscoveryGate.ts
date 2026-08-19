@@ -28,7 +28,7 @@
  * registries, and dynamic execution primitives.
  *
  * Usage:
- *   bun DiscoveryGate.ts <repo> [analysis-dir] [--json] [--check]
+ *   stpa discover <repo> [analysis-dir] [--json] [--check]
  *
  * Reads  <repo> source, and <analysis-dir>/discovery.json if present
  * Writes <analysis-dir>/discovery.json (a template, when absent)

@@ -22,11 +22,16 @@
  * Everything is offline. No API keys, no network, no telemetry.
  */
 
-const { spawnSync } = require("node:child_process");
-const { existsSync, mkdirSync, writeFileSync } = require("node:fs");
-const { join, resolve } = require("node:path");
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { join, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const HERE = __dirname;
+// package.json declares "type": "module", so this file is ESM under both runtimes
+// and __dirname does not exist. fileURLToPath is used rather than the newer
+// import.meta.dirname so the launcher keeps working on the whole Node range the
+// RUNTIME block below claims to support.
+const HERE = dirname(fileURLToPath(import.meta.url));
 const TOOLS = join(HERE, "tools");
 const LEGACY_TOOLS = join(HERE, "Tools"); // tolerate either casing
 const toolDir = existsSync(TOOLS) ? TOOLS : LEGACY_TOOLS;
