@@ -75,10 +75,15 @@ stpa init .stpa/model.json -o .stpa/grid.json  # 3. the 4 x N grid
 #    ...resolve every cell in grid.json
 stpa status .stpa/grid.json                    # 4. coverage check
 #    ...write .stpa/remediation.json — cost, location, fix, probe
-stpa run .stpa                                 # 5. plan + REPORT.html
+stpa run .stpa                                 # 5. plan + SUMMARY.html + REPORT.html
 ```
 
-Open `.stpa/REPORT.html` in any browser. It is a single self-contained file — no CDN, no scripts, no fonts. Email it, commit it, print it.
+Every run writes two self-contained files — no CDN, no scripts, no fonts. Email them, commit them, print them.
+
+- **`.stpa/SUMMARY.html`** — one page: what is at stake, what to fix first, the few root causes that close the most. This is the one you forward.
+- **`.stpa/REPORT.html`** — the full analysis: every unsafe control action, the loss scenarios, the constraints with runnable probes, the engineering plan.
+
+The summary is generated from the same artifacts as the report and carries the same qualifiers, so the two cannot disagree. Run `stpa summary` on its own to regenerate just the short one.
 
 ### What each command does
 
