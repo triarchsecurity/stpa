@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ledgerline — multi-tenant invoicing API (fictional; design document only, no code) — STPA Executive Summary</title>
+<style>
+:root{
+  --bg:#fbfbfa; --panel:#fff; --ink:#16181d; --muted:#5c6270; --line:#e3e5ea;
+  --accent:#1f4ed8; --uca:#b42318; --uca-bg:#fef3f2; --tomb:#475467; --tomb-bg:#f4f5f7;
+  --open:#b54708; --open-bg:#fffaeb; --ok:#067647;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e1014; --panel:#15181e; --ink:#e6e8ec; --muted:#9aa2b1; --line:#262b34;
+  --accent:#7da2ff; --uca:#ff8a80; --uca-bg:#2a1614; --tomb:#9aa2b1; --tomb-bg:#1a1e25;
+  --open:#f0b429; --open-bg:#2a2211; --ok:#5ed6a4;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.65 ui-sans-serif,-apple-system,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:44px 24px 80px}
+header.top{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:24px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:650}
+h1{font-size:28px;line-height:1.25;margin:8px 0 6px;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px}
+h2{font-size:16px;margin:34px 0 12px;letter-spacing:-.01em}
+section{margin:0}
+p.lede{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+.q{background:var(--open-bg);border:1px solid var(--open);color:var(--open);border-radius:10px;
+  padding:12px 16px;margin:10px 0;font-size:13px;line-height:1.55}
+.q.bad{background:var(--uca-bg);border-color:var(--uca);color:var(--uca)}
+.q b{font-weight:750}
+.q code{font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:22px 0 6px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:13px 12px;text-align:center}
+.stat.urgent{border-color:var(--uca)}
+.stat .v{font-size:23px;font-weight:750;letter-spacing:-.02em}
+.stat.urgent .v{color:var(--uca)}
+.stat .k{font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+@media (max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+ul.losses{list-style:none;padding:0;margin:0 0 18px}
+ul.losses li{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:11px 14px;margin-bottom:8px;font-size:13.5px;line-height:1.55}
+.id{display:inline-block;font-weight:750;font-size:11px;color:var(--accent);
+  background:var(--tomb-bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;margin-right:6px}
+table.hz{width:100%;border-collapse:collapse;background:var(--panel);
+  border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px}
+table.hz th{text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);padding:9px 13px;border-bottom:1px solid var(--line);font-weight:650}
+table.hz td{padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+table.hz tr:last-child td{border-bottom:none}
+table.hz td.c,table.hz th:nth-child(2),table.hz th:nth-child(3){text-align:center}
+.band{display:inline-block;min-width:19px;text-align:center;font-size:11px;font-weight:750;
+  border-radius:5px;padding:1px 6px}
+.b1{background:var(--uca-bg);color:var(--uca);border:1px solid var(--uca)}
+.b2{background:var(--open-bg);color:var(--open);border:1px solid var(--open)}
+.b3{background:var(--tomb-bg);color:var(--tomb);border:1px solid var(--line)}
+.b4{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+.f,.rc{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:14px 16px;margin-bottom:10px}
+.fh{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:7px}
+.fid{font-weight:700;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.muted{color:var(--muted);font-size:12.5px}
+.chip{font-size:10.5px;color:var(--muted);background:var(--tomb-bg);border:1px solid var(--line);
+  border-radius:5px;padding:1px 7px;font-weight:600}
+.chip.lev{color:var(--accent);border-color:var(--accent)}
+.fs{margin:0 0 8px;font-size:13.5px;line-height:1.6}
+.rcn{margin:0 0 6px;font-size:14px}
+.fx{margin:0 0 6px;font-size:13px;line-height:1.55;color:var(--ink)}
+.fx b,.loc b{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.loc{margin:0;font-size:12px}
+.loc code{font-size:11.5px;background:var(--tomb-bg);border:1px solid var(--line);
+  border-radius:5px;padding:2px 6px;overflow-wrap:break-word}
+p.note{color:var(--muted);font-size:11.5px;margin:7px 0 0}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:12.5px}
+footer a{color:var(--accent);font-weight:650}
+.more{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:14px 18px;margin-top:26px;font-size:13.5px}
+@media print{body{background:#fff}.wrap{max-width:none;padding:0}.f,.rc,.stat,table.hz{break-inside:avoid}}
+</style></head><body><div class="wrap">
+<header class="top">
+  <div class="eyebrow">STPA threat model — executive summary</div>
+  <h1>Ledgerline — multi-tenant invoicing API (fictional; design document only, no code)</h1>
+  <div class="sub">32 questions asked (8 control actions × 4 ways to be unsafe) · generated 2026-08-19</div>
+</header>
+<div class="q bad"><b>NOT INDEPENDENTLY REVIEWED.</b> No second model has adversarially reviewed these findings, so every finding and every band below is a <em>draft</em>, not a verdict. Run <code>stpa verify</code> after the review pass before circulating this page.</div>
+<div class="stats">
+  <div class="stat "><div class="v">8</div><div class="k">findings</div></div>
+  <div class="stat urgent"><div class="v">1</div><div class="k">band 1 — fix first</div></div>
+  <div class="stat "><div class="v">100%</div><div class="k">analysis complete</div></div>
+  <div class="stat "><div class="v">4</div><div class="k">root causes</div></div>
+  <div class="stat "><div class="v">3</div><div class="k">in wave 1</div></div>
+</div>
+<section><h2>What is at stake</h2>
+  <ul class="losses"><li><span class="id">L-1</span>  — one organisation's invoice data is disclosed to a party outside that organisation.</li><li><span class="id">L-2</span>  — Ledgerline staff read customer data without a business reason, and the customer cannot tell.</li></ul>
+  <table class="hz"><thead><tr><th>Hazard — an unsafe system state, not an attack</th><th title="from hazard ids named in each finding">Findings</th><th>Worst</th></tr></thead><tbody><tr><td><span class="id">H-1</span> the system serves invoice data to a principal whose entitlement to that organisation is not current. (→ L-1)</td><td class="c">6</td><td class="c"><span class="band b2">2</span></td></tr><tr><td><span class="id">H-2</span> the system grants a staff principal access to an organisation's data with no record the organisation can read. (→ L-2)</td><td class="c">1</td><td class="c"><span class="band b3">3</span></td></tr><tr><td><span class="id">H-3</span> the system delivers organisation event data to a network endpoint it has not established is external and org-controlled. (→ L-1)</td><td class="c">1</td><td class="c"><span class="band b1">1</span></td></tr></tbody></table>
+      <p class="note">Findings column counted from hazard ids named in each finding.</p>
+</section>
+<section><h2>What to fix first</h2>
+  <p class="lede">Wave 1 of the engineering plan — ranked by band, then by leverage.</p>
+  <div class="f">
+      <div class="fh"><span class="band b1">1</span><span class="fid">CA-8.provided</span><span class="muted">Webhook dispatcher</span><span class="chip">M effort</span></div>
+      <p class="fs">The webhook dispatcher POSTs a payment event when the configured URL points at an internal address, leading to H-3 (internal endpoints reached from inside the trust boundary, and event contents delivered to an unintended host).</p>
+      <p class="fx"><b>Fix</b> — Egress proxy that resolves at connect time and refuses non-public addresses.</p>
+      <p class="loc"><b>Where</b> — <code>DESIGN.md — 'the webhook URL is whatever the org typed'</code></p>
+    </div><div class="f">
+      <div class="fh"><span class="band b2">2</span><span class="fid">CA-3.provided</span><span class="muted">Pay-link service</span><span class="chip">S effort</span></div>
+      <p class="fs">The pay-link service serves an invoice when the presenter is anyone who has ever seen the link, including after the customer relationship ends, leading to H-1 (invoice contents disclosed to a non-customer).</p>
+      <p class="fx"><b>Fix</b> — Expire the token on payment or void; rotate on dispute.</p>
+      <p class="loc"><b>Where</b> — <code>DESIGN.md — 'pay-link token is a UUIDv4 ... never rotates'</code></p>
+    </div><div class="f">
+      <div class="fh"><span class="band b2">2</span><span class="fid">CA-3.duration</span><span class="muted">Pay-link service</span><span class="chip">S effort</span></div>
+      <p class="fs">The pay-link service keeps honouring a pay-link token indefinitely after the invoice is paid, leading to H-1.</p>
+      <p class="fx"><b>Fix</b> — Give the token a TTL independent of invoice state as a backstop.</p>
+      <p class="loc"><b>Where</b> — <code>DESIGN.md — pay-link section</code></p>
+    </div>
+</section>
+<section><h2>The few changes that close the most</h2>
+  <p class="lede">Root causes ranked by leverage — how many findings each one closes. Fixing these 3 resolves 7 of 8 findings.</p>
+  <div class="rc">
+      <div class="fh"><span class="fid">RC-1</span><span class="chip lev">closes 3</span><span class="chip">M effort</span></div>
+      <p class="rcn"><strong>Entitlement is decided from a claim, never from current state</strong></p>
+      <p class="fs">The gateway mints orgId at login and never re-reads it, and the invoice service trusts the header the gateway attaches. Neither component owns the belief, so neither refreshes it. The design note 'existing sessions are not revoked' is the same defect stated as a fact.</p>
+      <p class="fx"><b>Fix</b> — Derive org membership at the point of use, from the membership table, with a short cache. Make the gateway header advisory rather than authoritative.</p>
+    </div><div class="rc">
+      <div class="fh"><span class="fid">RC-2</span><span class="chip lev">closes 2</span><span class="chip">S effort</span></div>
+      <p class="rcn"><strong>Possession of a long-lived token is treated as entitlement</strong></p>
+      <p class="fs">Pay links are UUIDv4s that never rotate or expire, and they are distributed by email — so every copy that email produces is a permanent credential. No check can distinguish the customer from anyone the customer forwarded the mail to.</p>
+      <p class="fx"><b>Fix</b> — Bind pay-link validity to invoice state: expire at payment, rotate on dispute, and require a second factor the customer already holds.</p>
+    </div><div class="rc">
+      <div class="fh"><span class="fid">RC-4</span><span class="chip lev">closes 2</span><span class="chip">L effort</span></div>
+      <p class="rcn"><strong>Three of four feedback channels do not exist</strong></p>
+      <p class="fs">No pay-link access log, no impersonation notice the org can read, no webhook egress log. Every other finding here is silent, and every fix above can regress unobserved.</p>
+      <p class="fx"><b>Fix</b> — Log the pay-link fetch, expose an org-readable impersonation trail, and record webhook egress destinations.</p>
+    </div>
+</section>
+<div class="more"><b>This is the summary.</b> The full analysis — every unsafe control action, the loss scenarios behind each finding, the security constraints with runnable probes, and the complete engineering plan — is in <a href="REPORT.html">REPORT.html</a>, beside this file.</div>
+<footer>
+  <p>STPA (System-Theoretic Process Analysis, Leveson &amp; Thomas) with its security adaptation STPA-Sec. It looks for losses that happen when <em>every component works as designed</em> — broken authorization, tenant leaks, stale permissions, bypass paths. It is not a scanner: no CVEs, no injection, no dependency audit.</p>
+  <p>Generated from <code>ledgerline/</code>. Every figure on this page is computed from the analysis artifacts, not written by hand.</p>
+</footer>
+</div></body></html>

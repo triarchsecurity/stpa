@@ -32,3 +32,14 @@ jobs:
           bun Tools/RenderReport.ts Examples/ledgerline
           test -s Examples/ledgerline/REPORT.html
           ! grep -qE 'src="https?://|href="https?://[^"]*\.css' Examples/ledgerline/REPORT.html
+
+      - name: Summary renders, self-contained, and carries its qualifiers
+        run: |
+          bun Tools/RenderSummary.ts Examples/ledgerline
+          test -s Examples/ledgerline/SUMMARY.html
+          ! grep -qE 'src="https?://|href="https?://[^"]*\.css' Examples/ledgerline/SUMMARY.html
+          ! grep -q '<script' Examples/ledgerline/SUMMARY.html
+          # the summary is the page that gets forwarded; an unreviewed analysis must say so ON it
+          grep -q 'NOT INDEPENDENTLY REVIEWED' Examples/ledgerline/SUMMARY.html
+          # and it must link the full analysis rather than stand in for it
+          grep -q 'REPORT.html' Examples/ledgerline/SUMMARY.html

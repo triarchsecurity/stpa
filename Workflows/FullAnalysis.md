@@ -20,6 +20,7 @@ Runs Steps 1–4 plus constraint emission against a target. Use when the target 
 | `05-constraints.md` | controller constraints + spec-ready negative assertions + Test Strategy rows |
 | `remediation.json` | analyst input: severity, reachability, effort, location, fix, probe per finding |
 | `06-remediation.md` / `.json` | the engineering plan — root causes by leverage, waves, metrics |
+| **`SUMMARY.html`** | **the page you forward** — one sheet: at stake, fix first, top root causes. Carries every qualifier the report carries |
 | **`REPORT.html`** | **the default deliverable** — plan first, then the analysis. Self-contained, no network |
 
 ## Steps
