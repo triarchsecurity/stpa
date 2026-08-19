@@ -43,3 +43,80 @@ jobs:
           grep -q 'NOT INDEPENDENTLY REVIEWED' Examples/ledgerline/SUMMARY.html
           # and it must link the full analysis rather than stand in for it
           grep -q 'REPORT.html' Examples/ledgerline/SUMMARY.html
+
+  # The runtime lane that was missing. PR #9 claimed "runs on Node or Bun" and
+  # shipped broken on Node for four weeks, because every job above installs Bun and
+  # invokes the tools as `bun Tools/X.ts` — nothing ever ran `./stpa <verb>` past
+  # --help, and nothing ever ran Node at all.
+  #
+  # Note what the last step reproduces, because a clean checkout does NOT reproduce
+  # the bug: Node's module-syntax detection resolves these .ts tools as ESM just
+  # fine when nothing overrides it. The failure needs an ANCESTOR directory whose
+  # package.json says {"type":"commonjs"} — which is exactly where this repo gets
+  # installed, since `~/.claude/package.json` declares commonjs and skills clone
+  # into `~/.claude/skills/`. An ancestor declaration beats detection, so every
+  # import in Tools/ became a SyntaxError for anyone who installed it as a skill.
+  # A gate that only runs in a clean directory would have passed the whole time.
+  node:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: CLI loads under Node
+        run: chmod +x stpa && ./stpa --help
+
+      - name: Grid arithmetic under Node
+        run: |
+          node Tools/UcaGrid.ts init Fixtures/example-model.json -o /tmp/grid.json
+          node Tools/UcaGrid.ts status /tmp/grid.json
+
+      - name: Full pipeline end-to-end through the CLI
+        run: |
+          # `stpa run` exits non-zero by design on the worked example (it carries no
+          # independent peer review), so the gate is the artifacts, not the exit code.
+          cp -R Examples/ledgerline /tmp/run && rm -f /tmp/run/*.html
+          ./stpa run /tmp/run 2>&1 | tee /tmp/runlog || true
+          ! grep -qE 'SyntaxError|ReferenceError|ERR_MODULE_NOT_FOUND' /tmp/runlog
+          test -s /tmp/run/REPORT.html
+          test -s /tmp/run/SUMMARY.html
+
+      - name: Survives a CommonJS ancestor — the real install condition
+        run: |
+          set -e
+          # stage the repo under a parent that declares commonjs, as `~/.claude` does
+          mkdir -p /tmp/ancestor/skills
+          echo '{"name":"ancestor","type":"commonjs"}' > /tmp/ancestor/package.json
+          cp -R "$GITHUB_WORKSPACE" /tmp/ancestor/skills/stpa
+          cd /tmp/ancestor/skills/stpa
+          # our own package.json must shadow the ancestor for every tool
+          for f in Tools/*.ts; do
+            out=$(node "$f" --help 2>&1 || true)
+            case "$out" in
+              *"Cannot use import statement outside a module"*|*"require is not defined"*|*"ERR_MODULE_NOT_FOUND"*)
+                echo "::error file=$f::ancestor commonjs defeated module resolution"; echo "$out"; exit 1;;
+            esac
+          done
+          cp -R Examples/ledgerline /tmp/anc-run && rm -f /tmp/anc-run/*.html
+          ./stpa run /tmp/anc-run 2>&1 | tee /tmp/anc-log || true
+          ! grep -qE 'SyntaxError|ReferenceError|ERR_MODULE_NOT_FOUND' /tmp/anc-log
+          test -s /tmp/anc-run/REPORT.html
+          test -s /tmp/anc-run/SUMMARY.html
+
+      - name: The gate can fail — remove package.json and the ancestor wins
+        run: |
+          set -e
+          # A gate that cannot fail is decoration. Prove this one bites.
+          cd /tmp/ancestor/skills/stpa && rm -f package.json
+          if node Tools/RenderReport.ts --help 2>&1 | grep -q "Cannot use import statement outside a module"; then
+            echo "ok — without package.json the ancestor forces CommonJS and the tools break, as expected"
+          else
+            echo "::error::negative control did not reproduce; the ancestor step above proves nothing"
+            exit 1
+          fi

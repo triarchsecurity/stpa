@@ -35,7 +35,7 @@
  * disagreement.
  *
  * Usage:
- *   bun EvidenceGate.ts <analysis-dir> [--warn-only] [--fix-numbers]
+ *   stpa evidence <analysis-dir> [--warn-only] [--fix-numbers]
  *
  * Exit: 0 pass · 2 bad input · 9 unresolved trust root or a wrong number in prose
  */
@@ -51,7 +51,7 @@ if (argv.includes("--help") || argv.includes("-h")) {
     [
       "EvidenceGate.ts — trust-root provenance + derived-number consistency",
       "",
-      "Usage: bun EvidenceGate.ts <analysis-dir> [--warn-only] [--fix-numbers]",
+      "Usage: stpa evidence <analysis-dir> [--warn-only] [--fix-numbers]",
       "",
       "Every processModels[].variables[] entry needs trustRoot ∈",
       "  " + [...ROOTS].join(" | "),

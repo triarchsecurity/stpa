@@ -29,6 +29,16 @@ whichever runtime is executing it, so `./stpa` uses Node (≥22.6; types are str
 natively from 22.18, and the flag is passed automatically below that) and `bun stpa` uses
 Bun. There are no Bun-specific APIs anywhere in the toolkit.
 
+The repo ships a dependency-free `package.json` whose only job is `"type": "module"`.
+**Do not delete it.** Node's own module-syntax detection handles these files fine in
+isolation — the declaration is there because an *ancestor* directory can override
+detection, and the most common install location does exactly that: `~/.claude/package.json`
+declares `{"type":"commonjs"}`, and skills clone into `~/.claude/skills/`. Under that
+ancestor, and without this file, every `import` in `Tools/` is a `SyntaxError` and nothing
+but `stpa --help` runs. CI reproduces that ancestor on Node 22 and 24 — and asserts the
+check still fails when `package.json` is removed, because a gate that cannot fail is
+decoration.
+
 Everything is offline either way: no API keys, no network calls, no telemetry. Nothing is
 downloaded at install or at analysis time.
 

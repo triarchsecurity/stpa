@@ -33,7 +33,7 @@
  *      and print the one command that resolves it.
  *
  * Usage:
- *   bun ReportLink.ts [analysis-dir] [--copy-to <dir>] [--quiet]
+ *   stpa link [analysis-dir] [--copy-to <dir>] [--quiet]
  *
  * Env:
  *   STPA_HOST_MAP   comma-separated container=host prefix pairs, e.g.

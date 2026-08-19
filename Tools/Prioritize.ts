@@ -23,8 +23,8 @@
  * CVSS-comparable. It orders THIS analysis's findings for THIS team.
  *
  * Usage:
- *   bun Prioritize.ts [analysis-dir]        # writes 06-remediation.{json,md}
- *   bun Prioritize.ts [dir] --check         # exit 1 if any finding lacks remediation
+ *   stpa plan [analysis-dir]        # writes 06-remediation.{json,md}
+ *   stpa plan [dir] --check         # exit 1 if any finding lacks remediation
  */
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -98,7 +98,7 @@ function die(m: string, c = 1): never {
 
 const argv = process.argv.slice(2);
 if (argv.includes("--help") || argv.includes("-h"))
-  die("Usage: bun Prioritize.ts [analysis-dir] [--check]\n\nReads grid.json + remediation.json, writes 06-remediation.{json,md}.", 2);
+  die("Usage: stpa plan [analysis-dir] [--check]\n\nReads grid.json + remediation.json, writes 06-remediation.{json,md}.", 2);
 
 const dir = resolve(argv.find((a) => !a.startsWith("-")) ?? ".stpa");
 const checkOnly = argv.includes("--check");

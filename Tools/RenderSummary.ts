@@ -21,7 +21,7 @@
  * Every number here is computed from the artifacts. None is typed by hand — the
  * evidence gate exists because a stale hand-typed count reached a deliverable once.
  *
- * Usage: RenderSummary.ts [analysis-dir] [-o out.html] [--title "..."]
+ * Usage: stpa summary [analysis-dir] [-o out.html] [--title "..."]
  * Reads grid.json (required), plus 06-remediation.json, 01-scope.md, model.json and
  * review-scorecard.json when present. Writes <dir>/SUMMARY.html.
  */
@@ -57,7 +57,7 @@ if (argv.includes("--help") || argv.includes("-h")) {
     [
       "RenderSummary.ts — one-page executive summary for an STPA analysis",
       "",
-      "Usage: RenderSummary.ts [analysis-dir] [-o out.html] [--title \"...\"]",
+      "Usage: stpa summary [analysis-dir] [-o out.html] [--title \"...\"]",
       "",
       "Reads grid.json (required) plus 06-remediation.json, 01-scope.md, model.json",
       "and review-scorecard.json when present. Writes <dir>/SUMMARY.html.",

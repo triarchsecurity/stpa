@@ -31,7 +31,7 @@
  *                   cannot manufacture a clean percentage.
  *
  * Usage:
- *   bun ScopeGate.ts <analysis-dir> [--inventory N] [--warn-only]
+ *   stpa scope <analysis-dir> [--inventory N] [--warn-only]
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -48,7 +48,7 @@ if (argv.includes("--help") || argv.includes("-h"))
     [
       "ScopeGate.ts — hold the analysis to the scope that was requested",
       "",
-      "Usage: bun ScopeGate.ts <analysis-dir> [--inventory N] [--warn-only]",
+      "Usage: stpa scope <analysis-dir> [--inventory N] [--warn-only]",
       "",
       "  --inventory N   the target's real entry-point count, to sanity-check the",
       "                  candidate denominator (e.g. number of API route files)",

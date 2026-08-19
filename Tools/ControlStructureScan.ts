@@ -25,7 +25,7 @@
  * and unknown stacks still get the generic sweep.
  *
  * Usage:
- *   bun ControlStructureScan.ts <repo-path> [--json] [--max-per-category N] [--include-tests]
+ *   stpa scan <repo-path> [--json] [--max-per-category N] [--include-tests]
  *
  * Default output is a human-readable report; --json emits the structured candidate
  * set that feeds the ModelControlStructure workflow.
@@ -305,7 +305,7 @@ if (!root) {
     [
       "ControlStructureScan.ts — candidate extraction for STPA Step 2",
       "",
-      "Usage: bun ControlStructureScan.ts <repo-path> [options]",
+      "Usage: stpa scan <repo-path> [options]",
       "",
       "  --focus <lenses>      comma-separated; only patterns carrying these tags",
       "                        e.g. --focus authz,tenancy   or   --focus api",

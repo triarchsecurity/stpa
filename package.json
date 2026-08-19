@@ -1,0 +1,6 @@
+{
+  "name": "stpa",
+  "private": true,
+  "type": "module",
+  "description": "Control-theoretic threat modeling (STPA / STPA-Sec) for codebases and design documents. Zero dependencies. This file exists ONLY for the \"type\" field: Node's module-syntax detection reads these ESM tools correctly on its own, but an ancestor directory declaring {\"type\":\"commonjs\"} overrides detection — and the usual install path is ~/.claude/skills/, under a ~/.claude/package.json that declares exactly that. Without this file, every import in Tools/ is a SyntaxError there. Do not delete it."
+}

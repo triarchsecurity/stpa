@@ -15,7 +15,7 @@
  * whose integrity the rest of the skill works to protect.
  *
  * Usage:
- *   bun RenderReport.ts [analysis-dir] [-o out.html] [--title "..."]
+ *   stpa report [analysis-dir] [-o out.html] [--title "..."]
  *
  * Inputs (all optional except grid.json — missing sections are simply omitted):
  *   model.json  01-scope.md  02-control-structure.md  grid.json
@@ -241,7 +241,7 @@ if (argv.includes("--help") || argv.includes("-h")) {
     [
       "RenderReport.ts — self-contained HTML report for an STPA analysis",
       "",
-      "Usage: bun RenderReport.ts [analysis-dir] [-o out.html] [--title \"...\"]",
+      "Usage: stpa report [analysis-dir] [-o out.html] [--title \"...\"]",
       "",
       "Reads grid.json (required) plus model.json and any 0*.md artifacts present.",
     ].join("\n"),

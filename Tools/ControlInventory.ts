@@ -27,7 +27,7 @@
  * look, which is the actual failure mode.
  *
  * Usage:
- *   bun ControlInventory.ts <analysis-dir> [--warn-only]
+ *   stpa controls <analysis-dir> [--warn-only]
  *
  * Reads  candidates.json (from `stpa scan --json`), grid.json, remediation.json
  * Writes control-inventory.json
@@ -43,7 +43,7 @@ if (argv.includes("--help") || argv.includes("-h")) {
     [
       "ControlInventory.ts — cross-check absence claims against the guards the scan found",
       "",
-      "Usage: bun ControlInventory.ts <analysis-dir> [--warn-only]",
+      "Usage: stpa controls <analysis-dir> [--warn-only]",
       "",
       "Requires candidates.json in the analysis dir:",
       "  stpa scan <repo> --depth deep --json > <dir>/candidates.json",

@@ -49,7 +49,7 @@
  *   id:tenant-key       a tenant identifier used as a scoping or lookup key
  *
  * Usage:
- *   bun ComposeChains.ts [analysis-dir] [--check] [--max-depth N]
+ *   stpa compose [analysis-dir] [--check] [--max-depth N]
  *
  * Reads  remediation.json (+ grid.json for statements/labels)
  * Writes 07-chains.json, 07-chains.md
